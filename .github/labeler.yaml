@@ -1,0 +1,3 @@
+# Modules
+":floppy_disk: eventbridge-event-bus":
+- modules/eventbridge-event-bus/**/*
