@@ -1,3 +1,5 @@
 # Modules
 ":floppy_disk: eventbridge-event-bus":
 - modules/eventbridge-event-bus/**/*
+":floppy_disk: msk-cluster":
+- modules/msk-cluster/**/*
