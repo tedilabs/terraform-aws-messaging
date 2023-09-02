@@ -7,6 +7,7 @@
 Terraform module which creates messaging related resources on AWS.
 
 - [eventbridge-event-bus](./modules/eventbridge-event-bus)
+- [msk-cluster](./modules/msk-cluster)
 
 
 ## Target AWS Services
@@ -16,7 +17,7 @@ Terraform Modules from [this package](https://github.com/tedilabs/terraform-aws-
 - **AWS EventBridge (Formerly known as CloudWatch Events)**
   - Event Bus
 - **AWS MSK (Managed Streaming for Apache Kafka)**
-  - Comming Soon!
+  - Cluster
 - **AWS SNS (Simple Notification Service)**
   - Comming Soon!
 - **AWS SQS (Simple Queue Service)**

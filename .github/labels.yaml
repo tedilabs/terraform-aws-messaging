@@ -43,3 +43,6 @@
 - color: "fbca04"
   description: "This issue or pull request is related to eventbridge-event-bus module."
   name: ":floppy_disk: eventbridge-event-bus"
+- color: "fbca04"
+  description: "This issue or pull request is related to msk-cluster module."
+  name: ":floppy_disk: msk-cluster"
