@@ -45,7 +45,7 @@ variable "subscriptions_by_email" {
         `ATTRIBUTES` - The filter policy will be applied to the message attributes.
         `BODY` - The filter policy will be applied to the message body.
     (Optional) `redrive_policy` - The configuration to send undeliverable messages to a dead-letter queue. `redrive_policy` as defined below.
-      (Required) `dead_letter_sqs_queue` - The ARN of the SQS queue to which Amazon SNS can send undeliverable messages.
+      (Optional) `dead_letter_sqs_queue` - The ARN of the SQS queue to which Amazon SNS can send undeliverable messages.
   EOF
   type = list(object({
     email = string
@@ -91,7 +91,7 @@ variable "subscriptions_by_email_json" {
         `ATTRIBUTES` - The filter policy will be applied to the message attributes.
         `BODY` - The filter policy will be applied to the message body.
     (Optional) `redrive_policy` - The configuration to send undeliverable messages to a dead-letter queue. `redrive_policy` as defined below.
-      (Required) `dead_letter_sqs_queue` - The ARN of the SQS queue to which Amazon SNS can send undeliverable messages.
+      (Optional) `dead_letter_sqs_queue` - The ARN of the SQS queue to which Amazon SNS can send undeliverable messages.
   EOF
   type = list(object({
     email = string
