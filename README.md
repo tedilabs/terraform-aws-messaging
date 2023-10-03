@@ -32,6 +32,7 @@ Terraform Modules from [this package](https://github.com/tedilabs/terraform-aws-
 ### SNS (Simple Notification Service)
 
 - [sns-standard-topic-email-subscription](./examples/sns-standard-topic-email-subscription)
+- [sns-standard-topic-lambda-subscription](./examples/sns-standard-topic-lambda-subscription)
 
 
 ## Self Promotion
