@@ -126,6 +126,54 @@ variable "subscriptions_by_email_json" {
   }
 }
 
+variable "subscriptions_by_lambda" {
+  description = <<EOF
+  (Optional) A configuration for Lambda Function subscriptions to the SNS topic. Deliver JSON-encoded messages to the Lambda function. Each block of `subscriptions_by_lambda` as defined below.
+    (Required) `name` - The name of the subscription to the SNS topic. This value is only used internally within Terraform code.
+    (Required) `function` - The ARN of the AWS Lambda function that can receive notifications from the SNS topic.
+    (Optional) `filter_policy` - The configuration to filter the messages that a subscriber receives. Additions or changes to the filter policy require up to 15 minutes to fully take effect. `filter_policy` as defined below.
+      (Optional) `enabled` - Whether to enable the filter policy. Defaults to `false`.
+      (Optional) `scope` - Determine how the filter policy will be applied to the message.
+  Valid values are `ATTRIBUTES` and `BODY`. Defaults to `ATTRIBUTES`.
+        `ATTRIBUTES` - The filter policy will be applied to the message attributes.
+        `BODY` - The filter policy will be applied to the message body.
+    (Optional) `redrive_policy` - The configuration to send undeliverable messages to a dead-letter queue. `redrive_policy` as defined below.
+      (Optional) `dead_letter_sqs_queue` - The ARN of the SQS queue to which Amazon SNS can send undeliverable messages.
+  EOF
+  type = list(object({
+    name     = string
+    function = string
+    filter_policy = optional(object({
+      enabled = optional(bool, false)
+      scope   = optional(string, "ATTRIBUTES")
+      policy  = optional(string)
+    }), {})
+    redrive_policy = optional(object({
+      dead_letter_sqs_queue = optional(string)
+    }), {})
+  }))
+  default  = []
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for subscription in var.subscriptions_by_lambda :
+      contains(["ATTRIBUTES", "BODY"], subscription.filter_policy.scope)
+      if subscription.filter_policy.enabled
+    ])
+    error_message = "Valid values for `filter_policy.scope` are `ATTRIBUTES` and `BODY`."
+  }
+  validation {
+    condition = alltrue([
+      for subscription in var.subscriptions_by_lambda :
+      subscription.filter_policy.policy == null ||
+      can(jsondecode(subscription.filter_policy.policy))
+      if subscription.filter_policy.enabled
+    ])
+    error_message = "`filter_policy.policy` must be JSON string."
+  }
+}
+
 variable "xray_tracing_enabled" {
   description = "(Optional) Whether to activate AWS X-Ray Active Tracing mode for the SNS topic. If set to Active, Amazon SNS will vend X-Ray segment data to topic owner account if the sampled flag in the tracing header is true. Defaults to `false`, and the topic passes through the tracing header it receives from an Amazon SNS publisher to its subscriptions."
   type        = bool

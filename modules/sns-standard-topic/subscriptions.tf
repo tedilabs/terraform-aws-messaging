@@ -82,3 +82,41 @@ resource "aws_sns_topic_subscription" "email_json" {
     : null
   )
 }
+
+
+###################################################
+# Lambda Function Subscriptions
+###################################################
+
+# INFO: Not supported attributes
+# - `confirmation_timeout_in_minutes`
+# - `delivery_policy`
+# - `endpoint_auto_confirms`
+# - `subscription_role_arn`
+resource "aws_sns_topic_subscription" "lambda" {
+  for_each = {
+    for subscription in var.subscriptions_by_lambda :
+    subscription.name => subscription
+  }
+
+  topic_arn = aws_sns_topic.this.arn
+
+  protocol = "lambda"
+  endpoint = each.value.function
+
+  filter_policy_scope = (each.value.filter_policy.enabled
+    ? local.filter_policy_scopes[each.value.filter_policy.scope]
+    : null
+  )
+  filter_policy = (each.value.filter_policy.enabled
+    ? each.value.filter_policy.policy
+    : null
+  )
+
+  redrive_policy = (each.value.redrive_policy.dead_letter_sqs_queue != null
+    ? jsonencode({
+      "deadLetterTargetArn" = each.value.redrive_policy.dead_letter_sqs_queue
+    })
+    : null
+  )
+}

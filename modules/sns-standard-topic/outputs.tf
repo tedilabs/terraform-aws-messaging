@@ -82,6 +82,30 @@ output "subscriptions" {
         }, null)
       }
     }
+    "LAMBDA" = {
+      for name, subscription in aws_sns_topic_subscription.lambda :
+      name => {
+        arn       = subscription.arn
+        owner     = subscription.owner_id
+        function  = subscription.endpoint
+        is_active = !subscription.pending_confirmation
+
+        filter_policy = try({
+          enabled = subscription.filter_policy != null && subscription.filter_policy != ""
+          scope = try(
+            {
+              for k, v in local.filter_policy_scopes :
+              v => k
+            }[subscription.filter_policy_scope],
+            null
+          )
+          policy = try(jsondecode(subscription.filter_policy), null)
+        }, null)
+        redrive_policy = try({
+          dead_letter_sqs_queue = jsondecode(subscription.redrive_policy)["deadLetterTargetArn"]
+        }, null)
+      }
+    }
   }
 }
 
@@ -103,27 +127,27 @@ output "encryption_at_rest" {
   }
 }
 
-output "z" {
-  description = "The list of log streams for the log group."
-  value = {
-    for k, v in aws_sns_topic.this :
-    k => v
-    if !contains(["id", "arn", "name", "name_prefix", "display_name", "owner", "tags", "tags_all", "signature_version", "kms_master_key_id", "tracing_config", "content_based_deduplication", "fifo_topic"], k)
-  }
-}
-
-output "zz" {
-  description = "The list of log streams for the log group."
-  value = {
-    policy      = aws_sns_topic_policy.this
-    data_policy = aws_sns_topic_data_protection_policy.this
-    email = {
-      for email, subscription in aws_sns_topic_subscription.email :
-      email => {
-        for k, v in subscription :
-        k => v
-        if !contains(["arn", "endpoint", "topic_arn", "protocol", "subscription_role_arn", "id", "owner_id", "pending_confirmation", "confirmation_timeout_in_minutes", "delivery_policy", "endpoint_auto_confirms", "redrive_policy"], k)
-      }
-    }
-  }
-}
+# output "z" {
+#   description = "The list of log streams for the log group."
+#   value = {
+#     for k, v in aws_sns_topic.this :
+#     k => v
+#     if !contains(["id", "arn", "name", "name_prefix", "display_name", "owner", "tags", "tags_all", "signature_version", "kms_master_key_id", "tracing_config", "content_based_deduplication", "fifo_topic"], k)
+#   }
+# }
+#
+# output "zz" {
+#   description = "The list of log streams for the log group."
+#   value = {
+#     policy      = aws_sns_topic_policy.this
+#     data_policy = aws_sns_topic_data_protection_policy.this
+#     lambda = {
+#       for name, subscription in aws_sns_topic_subscription.lambda :
+#       name => {
+#         for k, v in subscription :
+#         k => v
+#         if !contains(["arn", "endpoint", "topic_arn", "protocol", "subscription_role_arn", "id", "owner_id", "pending_confirmation", "confirmation_timeout_in_minutes", "delivery_policy", "endpoint_auto_confirms", "redrive_policy"], k)
+#       }
+#     }
+#   }
+# }
