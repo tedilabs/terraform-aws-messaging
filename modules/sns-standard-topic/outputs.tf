@@ -63,6 +63,7 @@ output "subscriptions" {
       email => {
         arn       = subscription.arn
         owner     = subscription.owner_id
+        name      = subscription.endpoint
         email     = subscription.endpoint
         is_active = !subscription.pending_confirmation
 
@@ -87,9 +88,36 @@ output "subscriptions" {
       name => {
         arn       = subscription.arn
         owner     = subscription.owner_id
+        name      = name
         function  = subscription.endpoint
         is_active = !subscription.pending_confirmation
 
+        filter_policy = try({
+          enabled = subscription.filter_policy != null && subscription.filter_policy != ""
+          scope = try(
+            {
+              for k, v in local.filter_policy_scopes :
+              v => k
+            }[subscription.filter_policy_scope],
+            null
+          )
+          policy = try(jsondecode(subscription.filter_policy), null)
+        }, null)
+        redrive_policy = try({
+          dead_letter_sqs_queue = jsondecode(subscription.redrive_policy)["deadLetterTargetArn"]
+        }, null)
+      }
+    }
+    "SQS" = {
+      for name, subscription in aws_sns_topic_subscription.sqs :
+      name => {
+        arn       = subscription.arn
+        owner     = subscription.owner_id
+        name      = name
+        queue     = subscription.endpoint
+        is_active = !subscription.pending_confirmation
+
+        raw_message_delivery_enabled = subscription.raw_message_delivery
         filter_policy = try({
           enabled = subscription.filter_policy != null && subscription.filter_policy != ""
           scope = try(
@@ -135,14 +163,14 @@ output "encryption_at_rest" {
 #     if !contains(["id", "arn", "name", "name_prefix", "display_name", "owner", "tags", "tags_all", "signature_version", "kms_master_key_id", "tracing_config", "content_based_deduplication", "fifo_topic"], k)
 #   }
 # }
-#
+
 # output "zz" {
 #   description = "The list of log streams for the log group."
 #   value = {
 #     policy      = aws_sns_topic_policy.this
 #     data_policy = aws_sns_topic_data_protection_policy.this
-#     lambda = {
-#       for name, subscription in aws_sns_topic_subscription.lambda :
+#     queue = {
+#       for name, subscription in aws_sns_topic_subscription.sqs :
 #       name => {
 #         for k, v in subscription :
 #         k => v
