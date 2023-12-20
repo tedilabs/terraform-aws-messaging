@@ -2,7 +2,7 @@
 
 This module creates following resources.
 
-- `aws_cloudwatch_event_bus`
+- `aws_cloudwatch_event_bus` (optional)
 - `aws_cloudwatch_event_bus_policy` (optional)
 - `aws_cloudwatch_event_archive` (optional)
 - `aws_schemas_discoverer` (optional)
@@ -19,7 +19,7 @@ This module creates following resources.
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.19.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.31.0 |
 
 ## Modules
 
@@ -35,14 +35,15 @@ This module creates following resources.
 | [aws_cloudwatch_event_bus.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_bus) | resource |
 | [aws_cloudwatch_event_bus_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_bus_policy) | resource |
 | [aws_schemas_discoverer.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/schemas_discoverer) | resource |
+| [aws_cloudwatch_event_bus.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/cloudwatch_event_bus) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_name"></a> [name](#input\_name) | (Required) The name of the new event bus. The name of custom event bus can't contain the `/` character, but you can use the `/` character in partner event bus names. You can't use the name `default` for a custom event bus, as this name is already used for your account's default event bus. | `string` | n/a | yes |
-| <a name="input_archives"></a> [archives](#input\_archives) | (Required) The configuration to create archives for the event bus. Events are continuously saved in archives, and individual events will be deleted after the retention period. An archive will persist until you manually delete it. Each block of `archives` as defined below.<br>    (Required) `name` - The name of the new event archive. Maximum of 48 characters consisting of numbers, lower/upper case letters, `.`, `-`, `_`. You can't change the name of the archive after it is created.<br>    (Optional) `description` - The description of the new event archive.<br>    (Optional) `retention_in_days` - The maximum number of days to retain events in the new event archive. `0` is equivalent to Indefinite. The maximum is 2 billion days. Defaults to `0`.<br>    (Optional) `event_pattern` - An event pattern to use to filter events sent to the archive. | <pre>list(object({<br>    name              = string<br>    description       = optional(string, "Managed by Terraform.")<br>    retention_in_days = optional(number, 0)<br>    event_pattern     = optional(string)<br>  }))</pre> | `[]` | no |
+| <a name="input_archives"></a> [archives](#input\_archives) | (Required) The configuration to create archives for the event bus. Events are continuously saved in archives, and individual events will be deleted after the retention period. An archive will persist until you manually delete it. Each block of `archives` as defined below.<br>    (Required) `name` - The name of the new event archive. Maximum of 48 characters consisting of numbers, lower/upper case letters, `.`, `-`, `_`. You can't change the name of the archive after it is created.<br>    (Optional) `description` - The description of the new event archive.<br>    (Optional) `retention_in_days` - The maximum number of days to retain events in the new event archive. `0` is equivalent to Indefinite. The maximum is 2 billion days. Defaults to `0`.<br>    (Optional) `event_pattern` - An event pattern to use to filter events sent to the archive. All events from the source will be archived when `event_pattern` is not provided. | <pre>list(object({<br>    name              = string<br>    description       = optional(string, "Managed by Terraform.")<br>    retention_in_days = optional(number, 0)<br>    event_pattern     = optional(string)<br>  }))</pre> | `[]` | no |
 | <a name="input_module_tags_enabled"></a> [module\_tags\_enabled](#input\_module\_tags\_enabled) | (Optional) Whether to create AWS Resource Tags for the module informations. | `bool` | `true` | no |
+| <a name="input_name"></a> [name](#input\_name) | (Optional) The name of the new event bus. The name of custom event bus can't contain the `/` character, but you can use the `/` character in partner event bus names. You can't use the name `default` for a custom event bus, as this name is already used for your account's default event bus. If the value is `default`, it will load the `default` event bus that already exists instead of creating a new one. Defaults to `default`. | `string` | `"default"` | no |
 | <a name="input_policy"></a> [policy](#input\_policy) | (Optional) A valid policy JSON document. The resource-based policy defines who can access your event bus. By default, only the event bus owner can send events to the event bus. | `string` | `null` | no |
 | <a name="input_resource_group_description"></a> [resource\_group\_description](#input\_resource\_group\_description) | (Optional) The description of Resource Group. | `string` | `"Managed by Terraform."` | no |
 | <a name="input_resource_group_enabled"></a> [resource\_group\_enabled](#input\_resource\_group\_enabled) | (Optional) Whether to create Resource Group to find and group AWS resources which are created by this module. | `bool` | `true` | no |

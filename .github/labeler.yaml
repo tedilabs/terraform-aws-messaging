@@ -1,6 +1,8 @@
 # Modules
 ":floppy_disk: eventbridge-event-bus":
 - modules/eventbridge-event-bus/**/*
+":floppy_disk: eventbridge-rule":
+- modules/eventbridge-rule/**/*
 ":floppy_disk: msk-cluster":
 - modules/msk-cluster/**/*
 ":floppy_disk: sns-fifo-topic":

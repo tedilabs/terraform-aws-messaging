@@ -1,16 +1,16 @@
 output "id" {
   description = "The unique identifier for the event bus."
-  value       = aws_cloudwatch_event_bus.this.id
+  value       = local.event_bus.id
 }
 
 output "arn" {
   description = "The Amazon Resource Name (ARN) of the event bus."
-  value       = aws_cloudwatch_event_bus.this.arn
+  value       = local.event_bus.arn
 }
 
 output "name" {
   description = "The name of the event bus."
-  value       = aws_cloudwatch_event_bus.this.name
+  value       = local.event_bus.name
 }
 
 output "archives" {
