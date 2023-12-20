@@ -1,6 +1,7 @@
 variable "name" {
-  description = "(Required) The name of the new event bus. The name of custom event bus can't contain the `/` character, but you can use the `/` character in partner event bus names. You can't use the name `default` for a custom event bus, as this name is already used for your account's default event bus."
+  description = "(Optional) The name of the new event bus. The name of custom event bus can't contain the `/` character, but you can use the `/` character in partner event bus names. You can't use the name `default` for a custom event bus, as this name is already used for your account's default event bus. If the value is `default`, it will load the `default` event bus that already exists instead of creating a new one. Defaults to `default`."
   type        = string
+  default     = "default"
   nullable    = false
 }
 
@@ -16,7 +17,7 @@ variable "archives" {
     (Required) `name` - The name of the new event archive. Maximum of 48 characters consisting of numbers, lower/upper case letters, `.`, `-`, `_`. You can't change the name of the archive after it is created.
     (Optional) `description` - The description of the new event archive.
     (Optional) `retention_in_days` - The maximum number of days to retain events in the new event archive. `0` is equivalent to Indefinite. The maximum is 2 billion days. Defaults to `0`.
-    (Optional) `event_pattern` - An event pattern to use to filter events sent to the archive.
+    (Optional) `event_pattern` - An event pattern to use to filter events sent to the archive. All events from the source will be archived when `event_pattern` is not provided.
   EOF
   type = list(object({
     name              = string

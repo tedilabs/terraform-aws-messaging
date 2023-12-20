@@ -14,12 +14,28 @@ locals {
   } : {}
 }
 
+locals {
+  is_default = var.name == "default"
+  event_bus = (local.is_default
+    ? data.aws_cloudwatch_event_bus.default[0]
+    : aws_cloudwatch_event_bus.this[0]
+  )
+}
+
 
 ###################################################
 # Event Bus on EventBridge
 ###################################################
 
+data "aws_cloudwatch_event_bus" "default" {
+  count = local.is_default ? 1 : 0
+
+  name = "default"
+}
+
 resource "aws_cloudwatch_event_bus" "this" {
+  count = local.is_default ? 0 : 1
+
   name              = var.name
   event_source_name = startswith(var.name, "aws.partner/") ? var.name : null
 
@@ -40,7 +56,7 @@ resource "aws_cloudwatch_event_bus" "this" {
 resource "aws_cloudwatch_event_bus_policy" "this" {
   count = var.policy != null ? 1 : 0
 
-  event_bus_name = aws_cloudwatch_event_bus.this.name
+  event_bus_name = local.event_bus.name
   policy         = var.policy
 }
 
@@ -55,7 +71,7 @@ resource "aws_cloudwatch_event_archive" "this" {
     archive.name => archive
   }
 
-  event_source_arn = aws_cloudwatch_event_bus.this.arn
+  event_source_arn = local.event_bus.arn
 
   name           = each.key
   description    = each.value.description
@@ -72,7 +88,7 @@ resource "aws_cloudwatch_event_archive" "this" {
 resource "aws_schemas_discoverer" "this" {
   count = var.schema_discovery.enabled ? 1 : 0
 
-  source_arn  = aws_cloudwatch_event_bus.this.arn
+  source_arn  = local.event_bus.arn
   description = var.schema_discovery.description
 
   tags = merge(
