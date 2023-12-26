@@ -35,6 +35,38 @@ variable "state" {
   }
 }
 
+variable "default_execution_role" {
+  description = <<EOF
+  (Optional) A configuration for the default execution role to use for the rule that is used for target invocation. Use `execution_role` if `default_execution_role.enabled` is `false`. `default_execution_role` as defined below.
+    (Optional) `enabled` - Whether to create the default execution role. Defaults to `true`.
+    (Optional) `name` - The name of the default execution role. Defaults to `aws-eventbridge-$${var.event_bus}-rule-$${var.name}`.
+    (Optional) `path` - The path of the default execution role. Defaults to `/`.
+    (Optional) `description` - The description of the default execution role.
+    (Optional) `policies` - A list of IAM policy ARNs to attach to the default execution role. Defaults to `[]`.
+    (Optional) `inline_policies` - A Map of inline IAM policies to attach to the default execution role. (`name` => `policy`).
+  EOF
+  type = object({
+    enabled     = optional(bool, true)
+    name        = optional(string)
+    path        = optional(string, "/")
+    description = optional(string, "Managed by Terraform.")
+
+    policies        = optional(list(string), [])
+    inline_policies = optional(map(string), {})
+  })
+  default  = {}
+  nullable = false
+}
+
+variable "execution_role" {
+  description = <<EOF
+  (Optional) The ARN (Amazon Resource Name) of the IAM role associated with the rule that is used for target invocation. Only required if `default_execution_role.enabled` is `false`.
+  EOF
+  type        = string
+  default     = null
+  nullable    = true
+}
+
 variable "trigger" {
   description = <<EOF
   (Required) The configuration for the rule trigger. At least one of `schedule_expression` or `event_pattern` is required. `trigger` as defined below.
@@ -53,6 +85,141 @@ variable "trigger" {
       || var.trigger.schedule_expression != null
     )
     error_message = "At least one of `schedule_expression` or `event_pattern` is required."
+  }
+}
+
+variable "event_bus_targets" {
+  description = <<EOF
+  (Optional) The configuration to manage the specified EventBridge event bus targets for the rule. Each item of `event_bus_targets` as defined below.
+    (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
+    (Required) `event_bus` - The Amazon Resource Name (ARN) of the target event bus.
+
+    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`.
+
+    (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
+      (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
+      (Optional) `sqs_queue` - The Amazon Resource Name (ARN) of the SQS queue specified as the target for the dead letter queue.
+  EOF
+  type = list(object({
+    id        = string
+    event_bus = string
+
+    execution_role = optional(string)
+
+    dead_letter_queue = optional(object({
+      enabled   = optional(bool, false)
+      sqs_queue = optional(string)
+    }), {})
+  }))
+  default  = []
+  nullable = false
+
+  validation {
+    condition     = length(var.event_bus_targets) <= 5
+    error_message = "A maximum of 5 targets are allowed."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.event_bus_targets :
+      strcontains(target.event_bus, ":event-bus/")
+    ])
+    error_message = "The `event_bus` must be an ARN of the EventBridge event bus."
+  }
+}
+
+# TODO: Support EventBridge API Destination targets
+variable "api_destination_targets" {
+  description = <<EOF
+  (Optional) The configuration to manage the specified EventBridge API destination targets for the rule. Each item of `api_destination_targets` as defined below.
+    (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
+    (Required) `api_destination` - The Amazon Resource Name (ARN) of the target API destination.
+
+    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`.
+
+    (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
+      (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
+      (Optional) `sqs_queue` - The Amazon Resource Name (ARN) of the SQS queue specified as the target for the dead letter queue.
+    (Optional) `retry_policy` - The configuration for retry policy of the rule target. Retry policies are used for specifying how many times to retry sending an event to a target after an error occurs. `retry_policy` as defined below.
+      (Optional) `maximum_event_age` - The maximum amount of time, in seconds, to continue to make retry attempts. Defaults to `86400` (1 hour).
+      (Optional) `maximum_retry_attempts` - The maximum number of times to retry sending an event to a target after an error occurs. Defaults to `185`.
+  EOF
+  type = list(object({
+    id              = string
+    api_destination = string
+
+    execution_role = optional(string)
+
+    dead_letter_queue = optional(object({
+      enabled   = optional(bool, false)
+      sqs_queue = optional(string)
+    }), {})
+    retry_policy = optional(object({
+      maximum_event_age      = optional(number, 86400)
+      maximum_retry_attempts = optional(number, 185)
+    }), {})
+  }))
+  default  = []
+  nullable = false
+
+  validation {
+    condition     = length(var.api_destination_targets) <= 5
+    error_message = "A maximum of 5 targets are allowed."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.api_destination_targets :
+      strcontains(target.api_destination, ":api-destination/")
+    ])
+    error_message = "The `api_destination` must be an ARN of the EventBridge API destination."
+  }
+}
+
+variable "aws_service_targets" {
+  description = <<EOF
+  (Optional) The configuration to manage the specified AWS service targets for the rule. Targets are the resources that are invoked when a rule is triggered. Each item of `aws_service_targets` as defined below.
+    (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
+    (Required) `target` - The Amazon Resource Name (ARN) of the target.
+
+    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`.
+
+    (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
+      (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
+      (Optional) `sqs_queue` - The Amazon Resource Name (ARN) of the SQS queue specified as the target for the dead letter queue.
+    (Optional) `retry_policy` - The configuration for retry policy of the rule target. Retry policies are used for specifying how many times to retry sending an event to a target after an error occurs. `retry_policy` as defined below.
+      (Optional) `maximum_event_age` - The maximum amount of time, in seconds, to continue to make retry attempts. Defaults to `86400` (1 hour).
+      (Optional) `maximum_retry_attempts` - The maximum number of times to retry sending an event to a target after an error occurs. Defaults to `185`.
+  EOF
+  type = list(object({
+    id     = string
+    target = string
+
+    execution_role = optional(string)
+
+    dead_letter_queue = optional(object({
+      enabled   = optional(bool, false)
+      sqs_queue = optional(string)
+    }), {})
+    retry_policy = optional(object({
+      maximum_event_age      = optional(number, 86400)
+      maximum_retry_attempts = optional(number, 185)
+    }), {})
+  }))
+  default  = []
+  nullable = false
+
+  validation {
+    condition     = length(var.aws_service_targets) <= 5
+    error_message = "A maximum of 5 targets are allowed."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.aws_service_targets :
+      alltrue([
+        !strcontains(target.target, ":event-bus/"),
+        !strcontains(target.target, ":api-destination/"),
+      ])
+    ])
+    error_message = "The `target` must not be an ARN of the EventBridge event bus or API destination."
   }
 }
 

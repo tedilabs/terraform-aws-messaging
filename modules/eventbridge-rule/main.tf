@@ -19,7 +19,6 @@ locals {
 # Rule of Event Bus on EventBridge
 ###################################################
 
-# role_arn - (Optional) The Amazon Resource Name (ARN) associated with the role that is used for target invocation.
 # INFO: Not supported attributes
 # - `is_enabled`
 # - `name_prefix`
@@ -29,6 +28,13 @@ resource "aws_cloudwatch_event_rule" "this" {
   name        = var.name
   description = var.description
   state       = var.state
+
+
+  ## Permissions
+  role_arn = (var.default_execution_role.enabled
+    ? module.role[0].arn
+    : var.execution_role
+  )
 
 
   ## Triggers
@@ -43,16 +49,14 @@ resource "aws_cloudwatch_event_rule" "this" {
     local.module_tags,
     var.tags,
   )
+
+  lifecycle {
+    precondition {
+      condition = (length(var.event_bus_targets)
+        + length(var.api_destination_targets)
+        + length(var.aws_service_targets)
+      ) <= 5
+      error_message = "A maximum of 5 targets are allowed."
+    }
+  }
 }
-
-
-###################################################
-# Rule Targets
-###################################################
-
-# resource "aws_cloudwatch_event_target" "this" {
-#   count = var.policy != null ? 1 : 0
-#
-#   event_bus_name = aws_cloudwatch_event_bus.this.name
-#   policy         = var.policy
-# }

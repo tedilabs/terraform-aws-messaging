@@ -28,6 +28,11 @@ output "state" {
   value       = aws_cloudwatch_event_rule.this.state
 }
 
+output "execution_role" {
+  description = "The ARN (Amazon Resource Name) of the IAM role associated with the rule that is used for target invocation."
+  value       = aws_cloudwatch_event_rule.this.role_arn
+}
+
 output "trigger" {
   description = "The configuration for the rule trriger."
   value = {
@@ -36,15 +41,76 @@ output "trigger" {
   }
 }
 
-output "targets" {
-  description = "A list of archives for the event bus."
-  value = [
-    # for target in aws_cloudwatch_event_target.this : {
-    #   id                = archive.id
-    #   arn               = archive.arn
-    #   name              = archive.name
-    #   description       = archive.description
-    #   retention_in_days = archive.retention_days
-    # }
-  ]
+output "event_bus_targets" {
+  description = "The configuration for EventBridge event bus targets of the rule."
+  value = {
+    for id, target in aws_cloudwatch_event_target.event_bus :
+    id => {
+      id             = target.id
+      event_bus      = target.arn
+      execution_role = target.role_arn
+
+      dead_letter_queue = {
+        enabled = one(target.dead_letter_config) != null
+        sqs_queue = (one(target.dead_letter_config) != null
+          ? one(target.dead_letter_config).arn
+          : null
+        )
+      }
+    }
+  }
+}
+
+# TODO: Support EventBridge API Destination targets
+output "api_destination_targets" {
+  description = "The configuration for EventBridge API destination targets of the rule."
+  value = {
+    for id, target in aws_cloudwatch_event_target.api_destination :
+    id => {
+      id              = target.id
+      api_destination = target.arn
+      execution_role  = target.role_arn
+
+      dead_letter_queue = {
+        enabled = one(target.dead_letter_config) != null
+        sqs_queue = (one(target.dead_letter_config) != null
+          ? one(target.dead_letter_config).arn
+          : null
+        )
+      }
+      retry_policy = {
+        maximum_event_age      = target.retry_policy[0].maximum_event_age_in_seconds
+        maximum_retry_attempts = target.retry_policy[0].maximum_retry_attempts
+      }
+    }
+  }
+}
+
+output "aws_service_targets" {
+  description = "The configuration for AWS service targets of the rule."
+  value = {
+    for id, target in aws_cloudwatch_event_target.aws_service :
+    id => {
+      id             = target.id
+      target         = target.arn
+      execution_role = target.role_arn
+
+      dead_letter_queue = {
+        enabled = one(target.dead_letter_config) != null
+        sqs_queue = (one(target.dead_letter_config) != null
+          ? one(target.dead_letter_config).arn
+          : null
+        )
+      }
+      retry_policy = {
+        maximum_event_age      = target.retry_policy[0].maximum_event_age_in_seconds
+        maximum_retry_attempts = target.retry_policy[0].maximum_retry_attempts
+      }
+      z = {
+        for k, v in target :
+        k => v
+        if !contains(["id", "arn", "role_arn", "dead_letter_config"], k)
+      }
+    }
+  }
 }
