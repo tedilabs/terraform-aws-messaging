@@ -1,3 +1,21 @@
+locals {
+  aws_service_types = {
+    "CLOUDWATCH_LOG_GROUP" = {
+      support_execution_role = false
+    }
+    "SNS_TOPIC" = {
+      support_execution_role = false
+    }
+    "SQS_QUEUE" = {
+      support_execution_role = false
+    }
+    "SSM_RUN_COMMAND" = {
+      support_execution_role = true
+    }
+  }
+}
+
+
 ###################################################
 # Rule Targets (Event Bus)
 ###################################################
@@ -83,9 +101,7 @@ resource "aws_cloudwatch_event_target" "api_destination" {
 # ecs_target - (Optional) Parameters used when you are using the rule to invoke Amazon ECS Task. Documented below. A maximum of 1 are allowed.
 # http_target - (Optional) Parameters used when you are using the rule to invoke an API Gateway REST endpoint. Documented below. A maximum of 1 is allowed.
 # kinesis_target - (Optional) Parameters used when you are using the rule to invoke an Amazon Kinesis Stream. Documented below. A maximum of 1 are allowed.
-# run_command_targets - (Optional) Parameters used when you are using the rule to invoke Amazon EC2 Run Command. Documented below. A maximum of 5 are allowed.
 # redshift_target - (Optional) Parameters used when you are using the rule to invoke an Amazon Redshift Statement. Documented below. A maximum of 1 are allowed.
-# sqs_target - (Optional) Parameters used when you are using the rule to invoke an Amazon SQS Queue. Documented below. A maximum of 1 are allowed.
 # sagemaker_pipeline_target - (Optional) Parameters used when you are using the rule to invoke an Amazon SageMaker Pipeline. Documented below. A maximum of 1 are allowed.
 
 # NOTE:
@@ -104,14 +120,47 @@ resource "aws_cloudwatch_event_target" "aws_service" {
   event_bus_name = var.event_bus
   rule           = aws_cloudwatch_event_rule.this.name
 
+
+  ## Target
   target_id = each.key
-  arn       = each.value.target
+  arn = (
+    each.value.type == "CLOUDWATCH_LOG_GROUP"
+    ? each.value.cloudwatch_log_group.arn
+    : each.value.type == "SNS_TOPIC"
+    ? each.value.sns_topic.arn
+    : each.value.type == "SQS_QUEUE"
+    ? each.value.sqs_queue.arn
+    : each.value.type == "SSM_RUN_COMMAND"
+    ? each.value.ssm_run_command.document
+    : null
+  )
+
+  dynamic "sqs_target" {
+    for_each = each.value.type == "SQS_QUEUE" ? [each.value.sqs_queue] : []
+    iterator = target
+
+    content {
+      message_group_id = target.value.message_group_id
+    }
+  }
+  dynamic "run_command_targets" {
+    for_each = each.value.type == "SSM_RUN_COMMAND" ? each.value.ssm_run_command.target_selector : {}
+    iterator = target
+
+    content {
+      key    = target.key
+      values = target.value
+    }
+  }
 
 
   ## Permissions
-  role_arn = (each.value.execution_role != null
-    ? each.value.execution_role
-    : (var.default_execution_role.enabled ? module.role[0].arn : null)
+  role_arn = (local.aws_service_types[each.value.type].support_execution_role
+    ? (each.value.execution_role != null
+      ? each.value.execution_role
+      : (var.default_execution_role.enabled ? module.role[0].arn : null)
+    )
+    : null
   )
 
 

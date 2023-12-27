@@ -178,7 +178,18 @@ variable "aws_service_targets" {
   description = <<EOF
   (Optional) The configuration to manage the specified AWS service targets for the rule. Targets are the resources that are invoked when a rule is triggered. Each item of `aws_service_targets` as defined below.
     (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
-    (Required) `target` - The Amazon Resource Name (ARN) of the target.
+    (Required) `type` - The AWS resource type of the target. Valid values are
+  `CLOUDWATCH_LOG_GROUP`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
+    (Optional) `cloudwatch_log_group` - The configuration for CloudWatch log group target. `cloudwatch_log_group` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the CloudWatch log group.
+    (Optional) `sns_topic` - The configuration for SNS topic target. `sns_topic` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the SNS topic.
+    (Optional) `sqs_queue` - The configuration for SQS queue target. `sqs_queue` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the SQS queue.
+      (Optional) `message_group_id` - The FIFO message group ID to use as the target.
+    (Optional) `ssm_run_command` - The configuration for SSM run command target. `ssm_run_command` as defined below.
+      (Required) `document` - The Amazon Resource Name (ARN) of the SSM document to run on the target.
+      (Required) `target_selector` - The target selector as a Map of key-value pairs. Valid keys are `InstanceIds` or `tag:$${tag-name}`.
 
     (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`.
 
@@ -190,8 +201,22 @@ variable "aws_service_targets" {
       (Optional) `maximum_retry_attempts` - The maximum number of times to retry sending an event to a target after an error occurs. Defaults to `185`.
   EOF
   type = list(object({
-    id     = string
-    target = string
+    id   = string
+    type = string
+    cloudwatch_log_group = optional(object({
+      arn = string
+    }))
+    sns_topic = optional(object({
+      arn = string
+    }))
+    sqs_queue = optional(object({
+      arn              = string
+      message_group_id = optional(string)
+    }))
+    ssm_run_command = optional(object({
+      document        = string
+      target_selector = map(list(string))
+    }))
 
     execution_role = optional(string)
 
@@ -214,12 +239,43 @@ variable "aws_service_targets" {
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
-      alltrue([
-        !strcontains(target.target, ":event-bus/"),
-        !strcontains(target.target, ":api-destination/"),
+      contains(["CLOUDWATCH_LOG_GROUP", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
+    ])
+    error_message = "Valid values for `type` are `CLOUDWATCH_LOG_GROUP`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.aws_service_targets :
+      anytrue([
+        target.type == "CLOUDWATCH_LOG_GROUP" ? strcontains(target.cloudwatch_log_group.arn, ":log-group:") : false,
+        target.type == "SNS_TOPIC" ? strcontains(target.sns_topic.arn, ":sns:") : false,
+        target.type == "SQS_QUEUE" ? strcontains(target.sqs_queue.arn, ":sqs:") : false,
+        target.type == "SSM_RUN_COMMAND" ? strcontains(target.ssm_run_command.document, ":document/") : false,
       ])
     ])
-    error_message = "The `target` must not be an ARN of the EventBridge event bus or API destination."
+    error_message = "Valid ARN (Amazon Resource Name) for the target AWS resource is required depending on the value of `type`."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.aws_service_targets :
+      alltrue([
+        for key in keys(target.ssm_run_command.target_selector) :
+        key == "InstanceIds" || startswith(key, "tag:")
+      ])
+      if target.type == "SSM_RUN_COMMAND"
+    ])
+    error_message = "Valid keys for `target_selector` are `InstanceIds` or `tag:$${tag-name}`."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.aws_service_targets :
+      alltrue([
+        for value in values(target.ssm_run_command.target_selector) :
+        length(value) > 0
+      ])
+      if target.type == "SSM_RUN_COMMAND"
+    ])
+    error_message = "At least one value for each key of `target_selector` is required."
   }
 }
 

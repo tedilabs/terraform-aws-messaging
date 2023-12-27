@@ -46,7 +46,7 @@ output "event_bus_targets" {
   value = {
     for id, target in aws_cloudwatch_event_target.event_bus :
     id => {
-      id             = target.id
+      id             = target.target_id
       event_bus      = target.arn
       execution_role = target.role_arn
 
@@ -67,7 +67,7 @@ output "api_destination_targets" {
   value = {
     for id, target in aws_cloudwatch_event_target.api_destination :
     id => {
-      id              = target.id
+      id              = target.target_id
       api_destination = target.arn
       execution_role  = target.role_arn
 
@@ -91,7 +91,7 @@ output "aws_service_targets" {
   value = {
     for id, target in aws_cloudwatch_event_target.aws_service :
     id => {
-      id             = target.id
+      id             = target.target_id
       target         = target.arn
       execution_role = target.role_arn
 
@@ -109,7 +109,8 @@ output "aws_service_targets" {
       z = {
         for k, v in target :
         k => v
-        if !contains(["id", "arn", "role_arn", "dead_letter_config"], k)
+        if !contains(["id", "arn", "role_arn", "dead_letter_config", "retry_policy",
+        "event_bus_name", "rule", "target_id"], k)
       }
     }
   }
