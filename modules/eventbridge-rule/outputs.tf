@@ -41,6 +41,21 @@ output "trigger" {
   }
 }
 
+locals {
+  output_api_destination_targets = {
+    for target in var.api_destination_targets :
+    target.id => merge(target, {
+      instance = aws_cloudwatch_event_target.api_destination[target.id]
+    })
+  }
+  output_aws_service_targets = {
+    for target in var.aws_service_targets :
+    target.id => merge(target, {
+      instance = aws_cloudwatch_event_target.aws_service[target.id]
+    })
+  }
+}
+
 output "event_bus_targets" {
   description = "The configuration for EventBridge event bus targets of the rule."
   value = {
@@ -65,23 +80,22 @@ output "event_bus_targets" {
 output "api_destination_targets" {
   description = "The configuration for EventBridge API destination targets of the rule."
   value = {
-    for id, target in aws_cloudwatch_event_target.api_destination :
+    for id, target in local.output_api_destination_targets :
     id => {
-      id              = target.target_id
-      api_destination = target.arn
-      execution_role  = target.role_arn
+      id              = target.id
+      api_destination = target.instance.arn
+      execution_role  = target.instance.role_arn
+
+      input = target.input
 
       dead_letter_queue = {
-        enabled = one(target.dead_letter_config) != null
-        sqs_queue = (one(target.dead_letter_config) != null
-          ? one(target.dead_letter_config).arn
+        enabled = one(target.instance.dead_letter_config) != null
+        sqs_queue = (one(target.instance.dead_letter_config) != null
+          ? one(target.instance.dead_letter_config).arn
           : null
         )
       }
-      retry_policy = {
-        maximum_event_age      = target.retry_policy[0].maximum_event_age_in_seconds
-        maximum_retry_attempts = target.retry_policy[0].maximum_retry_attempts
-      }
+      retry_policy = target.retry_policy
     }
   }
 }
@@ -89,29 +103,23 @@ output "api_destination_targets" {
 output "aws_service_targets" {
   description = "The configuration for AWS service targets of the rule."
   value = {
-    for id, target in aws_cloudwatch_event_target.aws_service :
+    for id, target in local.output_aws_service_targets :
     id => {
-      id             = target.target_id
-      target         = target.arn
-      execution_role = target.role_arn
+      id             = target.id
+      type           = target.type
+      target         = target.instance.arn
+      execution_role = target.instance.role_arn
+
+      input = target.input
 
       dead_letter_queue = {
-        enabled = one(target.dead_letter_config) != null
-        sqs_queue = (one(target.dead_letter_config) != null
-          ? one(target.dead_letter_config).arn
+        enabled = one(target.instance.dead_letter_config) != null
+        sqs_queue = (one(target.instance.dead_letter_config) != null
+          ? one(target.instance.dead_letter_config).arn
           : null
         )
       }
-      retry_policy = {
-        maximum_event_age      = target.retry_policy[0].maximum_event_age_in_seconds
-        maximum_retry_attempts = target.retry_policy[0].maximum_retry_attempts
-      }
-      z = {
-        for k, v in target :
-        k => v
-        if !contains(["id", "arn", "role_arn", "dead_letter_config", "retry_policy",
-        "event_bus_name", "rule", "target_id"], k)
-      }
+      retry_policy = target.retry_policy
     }
   }
 }

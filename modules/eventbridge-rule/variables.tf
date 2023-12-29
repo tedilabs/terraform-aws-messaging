@@ -134,6 +134,14 @@ variable "api_destination_targets" {
     (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
     (Required) `api_destination` - The Amazon Resource Name (ARN) of the target API destination.
 
+    (Optional) `input` - The input to send to the target. `input` as defined below.
+      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRNASFORMER`. Defaults to `MATCHED_EVENT`.
+      (Optional) `value` - The input value to send to the target. Not required if `input.type` is `MATCHED_EVENT`.
+        `CONSTANT` - Valid JSON text passed to the target.
+        `JSON_PATH` - A JSON path expression that selects a portion of the event data to pass to the target.
+        `TRANSFORMER` - The input transformer feature of EventBridge customizes the text from an event before it is passed to the target. You can define variables that use JSON path to reference values in the original event source.
+      (Optional) `reference_variables` - A map of key-value pairs specified in the form of JSONPath (for example, `time = $.time`). Define variables that use JSON path to reference values in the original event source. Can define up to 100 variables. Only required if `input.type` is `TRANSFORMER`.
+
     (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`.
 
     (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
@@ -146,6 +154,12 @@ variable "api_destination_targets" {
   type = list(object({
     id              = string
     api_destination = string
+
+    input = optional(object({
+      type                = optional(string, "MATCHED_EVENT")
+      value               = optional(string)
+      reference_variables = optional(map(string), {})
+    }), {})
 
     execution_role = optional(string)
 
@@ -172,6 +186,13 @@ variable "api_destination_targets" {
     ])
     error_message = "The `api_destination` must be an ARN of the EventBridge API destination."
   }
+  validation {
+    condition = alltrue([
+      for target in var.api_destination_targets :
+      contains(["MATCHED_EVENT", "CONSTANT", "JSON_PATH", "TRANSFORMER"], target.input.type)
+    ])
+    error_message = "Valid values for `input.type` are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRANSFORMER`."
+  }
 }
 
 variable "aws_service_targets" {
@@ -190,6 +211,15 @@ variable "aws_service_targets" {
     (Optional) `ssm_run_command` - The configuration for SSM run command target. `ssm_run_command` as defined below.
       (Required) `document` - The Amazon Resource Name (ARN) of the SSM document to run on the target.
       (Required) `target_selector` - The target selector as a Map of key-value pairs. Valid keys are `InstanceIds` or `tag:$${tag-name}`.
+
+    (Optional) `input` - The input to send to the target. `input` as defined below.
+      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRNASFORMER`, `CHATBOT_CUSTOM_NOTIFICATION`. Defaults to `MATCHED_EVENT`.
+      (Optional) `value` - The input value to send to the target. Not required if `input.type` is `MATCHED_EVENT`.
+        `CONSTANT` - Valid JSON text passed to the target.
+        `JSON_PATH` - A JSON path expression that selects a portion of the event data to pass to the target.
+        `TRANSFORMER` - The input transformer feature of EventBridge customizes the text from an event before it is passed to the target. You can define variables that use JSON path to reference values in the original event source.
+        `CHATBOT_CUSTOM_NOTIFICATION` - The extended version of `TRANSFORMER` input type.
+      (Optional) `reference_variables` - A map of key-value pairs specified in the form of JSONPath (for example, `time = $.time`). Define variables that use JSON path to reference values in the original event source. Can define up to 100 variables. Only required if `input.type` is `TRANSFORMER` or `CHATBOT_CUSTOM_NOTIFICATION`.
 
     (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`.
 
@@ -217,6 +247,12 @@ variable "aws_service_targets" {
       document        = string
       target_selector = map(list(string))
     }))
+
+    input = optional(object({
+      type                = optional(string, "MATCHED_EVENT")
+      value               = optional(string)
+      reference_variables = optional(map(string), {})
+    }), {})
 
     execution_role = optional(string)
 
@@ -276,6 +312,13 @@ variable "aws_service_targets" {
       if target.type == "SSM_RUN_COMMAND"
     ])
     error_message = "At least one value for each key of `target_selector` is required."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.aws_service_targets :
+      contains(["MATCHED_EVENT", "CONSTANT", "JSON_PATH", "TRANSFORMER", "CHATBOT_CUSTOM_NOTIFICATION"], target.input.type)
+    ])
+    error_message = "Valid values for `input.type` are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRANSFORMER`, `CHATBOT_CUSTOM_NOTIFICATION`."
   }
 }
 

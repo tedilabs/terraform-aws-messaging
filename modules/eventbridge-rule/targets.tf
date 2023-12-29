@@ -104,13 +104,6 @@ resource "aws_cloudwatch_event_target" "api_destination" {
 # redshift_target - (Optional) Parameters used when you are using the rule to invoke an Amazon Redshift Statement. Documented below. A maximum of 1 are allowed.
 # sagemaker_pipeline_target - (Optional) Parameters used when you are using the rule to invoke an Amazon SageMaker Pipeline. Documented below. A maximum of 1 are allowed.
 
-# NOTE:
-# Input , InputPath , and InputTransformer are not available with
-# PutTarget if the target is an event bus of a different Amazon Web
-# Services account.
-# input - (Optional) Valid JSON text passed to the target. Conflicts with input_path and input_transformer.
-# input_path - (Optional) The value of the JSONPath that is used for extracting part of the matched event when passing it to the target. Conflicts with input and input_transformer.
-# input_transformer - (Optional) Parameters used when you are providing a custom input to a target based on certain event data. Conflicts with input and input_path.
 resource "aws_cloudwatch_event_target" "aws_service" {
   for_each = {
     for target in var.aws_service_targets :
@@ -150,6 +143,57 @@ resource "aws_cloudwatch_event_target" "aws_service" {
     content {
       key    = target.key
       values = target.value
+    }
+  }
+
+
+  ## Target Input
+  input      = each.value.input.type == "CONSTANT" ? each.value.input.value : null
+  input_path = each.value.input.type == "JSON_PATH" ? each.value.input.value : null
+
+  dynamic "input_transformer" {
+    for_each = each.value.input.type == "TRANSFORMER" ? [each.value.input] : []
+    iterator = input
+
+    content {
+      input_paths    = input.value.reference_variables
+      input_template = input.value.value
+    }
+  }
+
+  dynamic "input_transformer" {
+    for_each = (each.value.input.type == "CHATBOT_CUSTOM_NOTIFICATION"
+      ? [{
+        reference_variables = each.value.input.reference_variables
+        value               = jsondecode(each.value.input.value)
+      }]
+      : []
+    )
+    iterator = input
+
+    content {
+      input_paths = input.value.reference_variables
+      input_template = replace(replace(jsonencode({
+        "version" = "1.0"
+        "source"  = "custom"
+        "id"      = try(input.value.value.id, null)
+        "content" = {
+          "textType"    = "client-markdown"
+          "title"       = try(input.value.value.title, null)
+          "description" = input.value.value.text
+          "nextSteps"   = try(input.value.value.next_steps, [])
+          "keywords"    = try(input.value.value.keywords, [])
+        }
+        "metadata" = {
+          "additionalContext" = merge(
+            {
+              for k, v in input.value.reference_variables :
+              k => "<${k}>"
+            },
+            try(input.value.value.additional_context, {}),
+          )
+        }
+      }), "\\u003e", ">"), "\\u003c", "<")
     }
   }
 
