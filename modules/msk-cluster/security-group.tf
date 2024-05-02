@@ -13,7 +13,7 @@ locals {
 
 module "security_group" {
   source  = "tedilabs/network/aws//modules/security-group"
-  version = "0.26.0"
+  version = "0.32.0"
 
   count = length(var.broker_allowed_ingress_cidrs) > 0 ? 1 : 0
 
