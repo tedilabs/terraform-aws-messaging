@@ -199,8 +199,7 @@ variable "aws_service_targets" {
   description = <<EOF
   (Optional) The configuration to manage the specified AWS service targets for the rule. Targets are the resources that are invoked when a rule is triggered. Each item of `aws_service_targets` as defined below.
     (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
-    (Required) `type` - The AWS resource type of the target. Valid values are
-  `CLOUDWATCH_LOG_GROUP`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
+    (Required) `type` - The AWS resource type of the target. Valid values are `CLOUDWATCH_LOG_GROUP`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
     (Optional) `cloudwatch_log_group` - The configuration for CloudWatch log group target. `cloudwatch_log_group` as defined below.
       (Required) `arn` - The Amazon Resource Name (ARN) of the CloudWatch log group.
     (Optional) `sns_topic` - The configuration for SNS topic target. `sns_topic` as defined below.
