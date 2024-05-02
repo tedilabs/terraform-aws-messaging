@@ -17,7 +17,7 @@ module "role" {
   count = var.default_execution_role.enabled ? 1 : 0
 
   source  = "tedilabs/account/aws//modules/iam-role"
-  version = "~> 0.28.0"
+  version = "~> 0.29.1"
 
   name = coalesce(
     var.default_execution_role.name,
