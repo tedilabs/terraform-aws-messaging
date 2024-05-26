@@ -1,11 +1,25 @@
 # Modules
 ":floppy_disk: eventbridge-event-bus":
-- modules/eventbridge-event-bus/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - modules/eventbridge-event-bus/**/*
+
 ":floppy_disk: eventbridge-rule":
-- modules/eventbridge-rule/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - modules/eventbridge-rule/**/*
+
 ":floppy_disk: msk-cluster":
-- modules/msk-cluster/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - modules/msk-cluster/**/*
+
 ":floppy_disk: sns-fifo-topic":
-- modules/sns-fifo-topic/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - modules/sns-fifo-topic/**/*
+
 ":floppy_disk: sns-standard-topic":
-- modules/sns-standard-topic/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - modules/sns-standard-topic/**/*
