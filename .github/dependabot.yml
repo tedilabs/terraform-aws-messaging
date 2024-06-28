@@ -7,10 +7,6 @@ updates:
 
 - package-ecosystem: terraform
   directories:
-  - /modules/eventbridge-event-bus
-  - /modules/eventbridge-rule
-  - /modules/msk-cluster
-  - /modules/sns-fifo-topic
-  - /modules/sns-standard-topic
+  - /modules/*
   schedule:
     interval: weekly
