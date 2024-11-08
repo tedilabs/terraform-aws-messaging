@@ -3,6 +3,11 @@ output "arn" {
   value       = aws_msk_cluster.this.arn
 }
 
+output "uuid" {
+  description = "The UUID of the MSK cluster, for use in IAM policies."
+  value       = aws_msk_cluster.this.cluster_uuid
+}
+
 output "name" {
   description = "The MSK cluster name."
   value       = var.name
