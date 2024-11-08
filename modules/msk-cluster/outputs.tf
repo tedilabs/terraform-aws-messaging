@@ -164,24 +164,45 @@ output "monitoring" {
 
 output "bootstrap_brokers" {
   description = <<EOF
-  A configuration for connecting to the Kafka cluster.
+  The information to bootstrap connectivity to the Kafka cluster.
     `plaintext` - A comma separated list of one or more hostname:port pairs of kafka brokers suitable to boostrap connectivity to the kafka cluster. Only contains value if `client_encryption_in_transit_mode` is set to PLAINTEXT or TLS_PLAINTEXT. AWS may not always return all endpoints so the values may not be stable across applies.
     `sasl_iam` - A comma separated list of one or more DNS names (or IPs) and SASL IAM port pairs. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS. AWS may not always return all endpoints so the values may not be stable across applies.
     `sasl_scram` - A comma separated list of one or more DNS names (or IPs) and SASL SCRAM port pairs. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS. AWS may not always return all endpoints so the values may not be stable across applies.
     `tls` - A comma separated list of one or more DNS names (or IPs) and TLS port pairs kafka brokers suitable to boostrap connectivity to the kafka cluster. Only contains value if `client_encryption_in_transit_mode is set to TLS_PLAINTEXT or TLS. AWS may not always return all endpoints so the values may not be stable across applies.
-    `public_sasl_iam` - A comma separated list of one or more DNS names (or IPs) and SASL IAM port pairs. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS and `auth_sasl_iam_enabled` is `true` and `broker_public_access_enabled` is `true`. AWS may not always return all endpoints so the values may not be stable across applies.
-    `public_sasl_scram` - A comma separated list of one or more DNS names (or IPs) and SASL SCRAM port pairs. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS and `auth_sasl_scram_enabled` is `true` and `broker_public_access_enabled` is `true`. AWS may not always return all endpoints so the values may not be stable across applies.
-    `public_tls` - A comma separated list of one or more DNS names (or IPs) and TLS port pairs. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS and `broker_public_access_enabled` is `true`. AWS may not always return all endpoints so the values may not be stable across applies.
   EOF
   value = {
     plaintext  = aws_msk_cluster.this.bootstrap_brokers
     sasl_iam   = aws_msk_cluster.this.bootstrap_brokers_sasl_iam
     sasl_scram = aws_msk_cluster.this.bootstrap_brokers_sasl_scram
     tls        = aws_msk_cluster.this.bootstrap_brokers_tls
+  }
+}
 
-    public_sasl_iam   = aws_msk_cluster.this.bootstrap_brokers_public_sasl_iam
-    public_sasl_scram = aws_msk_cluster.this.bootstrap_brokers_public_sasl_scram
-    public_tls        = aws_msk_cluster.this.bootstrap_brokers_public_tls
+output "bootstrap_brokers_for_public_access" {
+  description = <<EOF
+  The information to bootstrap connectivity to the Kafka cluster for public access.
+    `sasl_iam` - A comma separated list of one or more DNS names (or IPs) and SASL IAM port pairs. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS and `auth_sasl_iam_enabled` is `true` and `broker_public_access_enabled` is `true`. AWS may not always return all endpoints so the values may not be stable across applies.
+    `sasl_scram` - A comma separated list of one or more DNS names (or IPs) and SASL SCRAM port pairs. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS and `auth_sasl_scram_enabled` is `true` and `broker_public_access_enabled` is `true`. AWS may not always return all endpoints so the values may not be stable across applies.
+    `tls` - A comma separated list of one or more DNS names (or IPs) and TLS port pairs. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS and `broker_public_access_enabled` is `true`. AWS may not always return all endpoints so the values may not be stable across applies.
+  EOF
+  value = {
+    sasl_iam   = aws_msk_cluster.this.bootstrap_brokers_public_sasl_iam
+    sasl_scram = aws_msk_cluster.this.bootstrap_brokers_public_sasl_scram
+    tls        = aws_msk_cluster.this.bootstrap_brokers_public_tls
+  }
+}
+
+output "bootstrap_brokers_for_vpc_connectivity" {
+  description = <<EOF
+  The information to bootstrap connectivity to the Kafka cluster for VPC connectivity.
+    `sasl_iam` - A comma separated list of one or more DNS names (or IPs) and SASL IAM port pairs for VPC connectivity. AWS may not always return all endpoints so the values may not be stable across applies.
+    `sasl_scram` - A comma separated list of one or more DNS names (or IPs) and SASL SCRAM port pairs for VPC connectivity. AWS may not always return all endpoints so the values may not be stable across applies.
+    `tls` - A comma separated list of one or more DNS names (or IPs) and TLS port pairs for VPC connectivity. AWS may not always return all endpoints so the values may not be stable across applies.
+  EOF
+  value = {
+    sasl_iam   = aws_msk_cluster.this.bootstrap_brokers_vpc_connectivity_sasl_iam
+    sasl_scram = aws_msk_cluster.this.bootstrap_brokers_vpc_connectivity_sasl_scram
+    tls        = aws_msk_cluster.this.bootstrap_brokers_vpc_connectivity_tls
   }
 }
 
