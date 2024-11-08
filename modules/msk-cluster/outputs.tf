@@ -46,8 +46,6 @@ output "broker" {
 
     `public_access_enabled` - Whether public access to MSK brokers is enabled.
     `security_groups` - A list of the security groups associated with the MSK cluster.
-
-    `volume` - A EBS volume information for MSK brokers.
   EOF
   value = {
     size          = aws_msk_cluster.this.number_of_broker_nodes
@@ -56,19 +54,27 @@ output "broker" {
     subnets                   = aws_msk_cluster.this.broker_node_group_info[0].client_subnets
     public_access_enabled     = var.broker_public_access_enabled
     security_groups           = aws_msk_cluster.this.broker_node_group_info[0].security_groups
-    default_security_group_id = try(module.security_group[*].id[0], null)
+    default_security_group_id = module.security_group.id
+  }
+}
 
-    volume = {
-      size = aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].volume_size
-      provisioned_throughput = {
-        enabled    = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].enabled, false)
-        throughput = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].volume_throughput, null)
-      }
+output "broker_storage" {
+  description = "The configuration for broker storage of the MSK cluster."
+  value = {
+    volume_size = aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].volume_size
+    provisioned_throughput = {
+      enabled    = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].enabled, false)
+      throughput = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].volume_throughput, null)
     }
   }
 }
 
-output "auth" {
+output "cluster_storage_mode" {
+  description = "The storage mode of the MSK cluster."
+  value       = aws_msk_cluster.this.storage_mode
+}
+
+output "authentication" {
   description = "A configuration for authentication of the Kafka cluster."
   value = {
     unauthenticated_access = {
@@ -80,31 +86,33 @@ output "auth" {
       }
       scram = {
         enabled = aws_msk_cluster.this.client_authentication[0].sasl[0].scram
-        kms_key = var.auth_sasl_scram_kms_key
-        users   = var.auth_sasl_scram_users
+        kms_key = var.authentication.sasl_scram.kms_key
+        users   = var.authentication.sasl_scram.users
       }
     }
     tls = {
-      enabled     = var.auth_tls_enabled
-      acm_ca_arns = try(aws_msk_cluster.this.client_authentication[0].tls[0].certificate_authority_arns, [])
+      enabled                             = var.authentication.tls.enabled
+      acm_private_certificate_authorities = try(aws_msk_cluster.this.client_authentication[0].tls[0].certificate_authority_arns, [])
     }
   }
 }
 
-output "encryption" {
+output "encryption_at_rest" {
   description = <<EOF
-  A configuration for encryption of the Kafka cluster.
-    `at_rest` - The configuration for encryption at rest.
-    `in_transit` - The configuration for encryption in transit.
+  The configuration for encryption at rest of the Kafka cluster.
   EOF
   value = {
-    at_rest = {
-      kms_key = aws_msk_cluster.this.encryption_info[0].encryption_at_rest_kms_key_arn
-    }
-    in_transit = {
-      in_cluster_enabled = aws_msk_cluster.this.encryption_info[0].encryption_in_transit[0].in_cluster
-      client_mode        = aws_msk_cluster.this.encryption_info[0].encryption_in_transit[0].client_broker
-    }
+    kms_key = aws_msk_cluster.this.encryption_info[0].encryption_at_rest_kms_key_arn
+  }
+}
+
+output "encryption_in_transit" {
+  description = <<EOF
+  The configuration for encryption in transit of the Kafka cluster.
+  EOF
+  value = {
+    in_cluster_enabled = aws_msk_cluster.this.encryption_info[0].encryption_in_transit[0].in_cluster
+    client_mode        = aws_msk_cluster.this.encryption_info[0].encryption_in_transit[0].client_broker
   }
 }
 
@@ -125,9 +133,9 @@ output "logging" {
       delivery_stream = aws_msk_cluster.this.logging_info[0].broker_logs[0].firehose[0].delivery_stream
     }
     s3 = {
-      enabled = aws_msk_cluster.this.logging_info[0].broker_logs[0].s3[0].enabled
-      bucket  = aws_msk_cluster.this.logging_info[0].broker_logs[0].s3[0].bucket
-      prefix  = aws_msk_cluster.this.logging_info[0].broker_logs[0].s3[0].prefix
+      enabled    = aws_msk_cluster.this.logging_info[0].broker_logs[0].s3[0].enabled
+      bucket     = aws_msk_cluster.this.logging_info[0].broker_logs[0].s3[0].bucket
+      key_prefix = aws_msk_cluster.this.logging_info[0].broker_logs[0].s3[0].prefix
     }
   }
 }
@@ -135,12 +143,12 @@ output "logging" {
 output "monitoring" {
   description = <<EOF
   A configuration for monitoring of the Kafka cluster.
-    `cloudwatch` - The configuration for MSK CloudWatch Metrics.
+    `cloudwatch_metrics` - The configuration for MSK CloudWatch Metrics.
     `prometheus` - The configuration for Prometheus open monitoring.
   EOF
   value = {
-    cloudwatch = {
-      level = aws_msk_cluster.this.enhanced_monitoring
+    cloudwatch_metrics = {
+      monitoring_level = aws_msk_cluster.this.enhanced_monitoring
     }
     prometheus = {
       jmx_exporter_enabled  = aws_msk_cluster.this.open_monitoring[0].prometheus[0].jmx_exporter[0].enabled_in_broker

@@ -44,7 +44,6 @@ resource "aws_msk_configuration" "this" {
 # MSK Cluster
 ###################################################
 
-# TODO: public access cidrs
 resource "aws_msk_cluster" "this" {
   cluster_name           = var.name
   kafka_version          = var.kafka_version
@@ -55,10 +54,12 @@ resource "aws_msk_cluster" "this" {
     az_distribution = "DEFAULT"
     client_subnets  = var.broker_subnets
     security_groups = concat(
-      module.security_group[*].id,
+      [module.security_group.id],
       var.broker_additional_security_groups
     )
 
+    # TODO: `vpc_connectivity`
+    # TODO: public access cidrs
     connectivity_info {
       public_access {
         type = var.broker_public_access_enabled ? "SERVICE_PROVIDED_EIPS" : "DISABLED"
@@ -67,19 +68,20 @@ resource "aws_msk_cluster" "this" {
 
     storage_info {
       ebs_storage_info {
-        volume_size = var.broker_volume_size
+        volume_size = var.broker_storage.volume_size
 
         dynamic "provisioned_throughput" {
-          for_each = var.broker_volume_provisioned_throughput_enabled ? ["go"] : []
+          for_each = var.broker_storage.provisioned_throughput.enabled ? [var.broker_storage.provisioned_throughput] : []
 
           content {
-            enabled           = true
-            volume_throughput = var.broker_volume_provisioned_throughput
+            enabled           = provisioned_throughput.value.enabled
+            volume_throughput = provisioned_throughput.value.throughput
           }
         }
       }
     }
   }
+  storage_mode = var.cluster_storage_mode
 
   configuration_info {
     arn      = aws_msk_configuration.this.arn
@@ -87,20 +89,20 @@ resource "aws_msk_cluster" "this" {
   }
 
 
-  ## Auth
+  ## Authentiation
   client_authentication {
-    unauthenticated = var.auth_unauthenticated_access_enabled
+    unauthenticated = var.authentication.unauthenticated_access.enabled
 
     sasl {
-      iam   = var.auth_sasl_iam_enabled
-      scram = var.auth_sasl_scram_enabled
+      iam   = var.authentication.sasl_iam.enabled
+      scram = var.authentication.sasl_scram.enabled
     }
 
     dynamic "tls" {
-      for_each = var.auth_tls_enabled ? ["go"] : []
+      for_each = var.authentication.tls.enabled ? [var.authentication.tls] : []
 
       content {
-        certificate_authority_arns = var.auth_tls_acm_ca_arns
+        certificate_authority_arns = tls.value.acm_private_certificate_authorities
       }
     }
   }
@@ -108,11 +110,11 @@ resource "aws_msk_cluster" "this" {
 
   ## Encryption
   encryption_info {
-    encryption_at_rest_kms_key_arn = var.encryption_at_rest_kms_key
+    encryption_at_rest_kms_key_arn = var.encryption_at_rest.kms_key
 
     encryption_in_transit {
-      in_cluster    = var.encryption_in_transit_in_cluster_enabled
-      client_broker = var.encryption_in_transit_client_mode
+      in_cluster    = var.encryption_in_transit.in_cluster_enabled
+      client_broker = var.encryption_in_transit.client_mode
     }
   }
 
@@ -121,33 +123,33 @@ resource "aws_msk_cluster" "this" {
   logging_info {
     broker_logs {
       cloudwatch_logs {
-        enabled   = var.logging_cloudwatch_enabled
-        log_group = var.logging_cloudwatch_log_group
+        enabled   = var.logging.cloudwatch_logs.enabled
+        log_group = var.logging.cloudwatch_logs.log_group
       }
       firehose {
-        enabled         = var.logging_firehose_enabled
-        delivery_stream = var.logging_firehose_delivery_stream
+        enabled         = var.logging.firehose.enabled
+        delivery_stream = var.logging.firehose.delivery_stream
       }
       s3 {
-        enabled = var.logging_s3_enabled
-        bucket  = var.logging_s3_bucket
-        prefix  = var.logging_s3_prefix
+        enabled = var.logging.s3.enabled
+        bucket  = var.logging.s3.bucket
+        prefix  = var.logging.s3.key_prefix
       }
     }
   }
 
 
   ## Monitoring
-  enhanced_monitoring = var.monitoring_cloudwatch_level
+  enhanced_monitoring = var.cloudwatch_metrics.monitoring_level
 
   open_monitoring {
     prometheus {
       jmx_exporter {
-        enabled_in_broker = var.monitoring_prometheus_jmx_exporter_enabled
+        enabled_in_broker = var.prometheus.jmx_exporter_enabled
       }
 
       node_exporter {
-        enabled_in_broker = var.monitoring_prometheus_node_exporter_enabled
+        enabled_in_broker = var.prometheus.node_exporter_enabled
       }
     }
   }
