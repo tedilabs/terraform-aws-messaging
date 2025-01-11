@@ -71,8 +71,8 @@ resource "aws_msk_cluster" "this" {
         volume_size = var.broker_storage.volume_size
 
         provisioned_throughput {
-          enabled           = provisioned_throughput.value.enabled
-          volume_throughput = provisioned_throughput.value.enabled ? provisioned_throughput.value.throughput : null
+          enabled           = var.broker_storage.provisioned_throughput.enabled
+          volume_throughput = var.broker_storage.provisioned_throughput.enabled ? var.broker_storage.provisioned_throughput.throughput : null
         }
       }
     }
