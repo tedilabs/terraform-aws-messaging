@@ -5,7 +5,7 @@ This module creates following resources.
 - `aws_cloudwatch_event_rule`
 - `aws_cloudwatch_event_target` (optional)
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
@@ -76,4 +76,4 @@ This module creates following resources.
 | <a name="output_name"></a> [name](#output\_name) | The name of the rule. |
 | <a name="output_state"></a> [state](#output\_state) | The state of the rule. |
 | <a name="output_trigger"></a> [trigger](#output\_trigger) | The configuration for the rule trriger. |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->

@@ -7,7 +7,7 @@ This module creates following resources.
 - `aws_sns_topic_policy` (optional)
 - `aws_sns_topic_subscription` (optional)
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
@@ -76,4 +76,4 @@ This module creates following resources.
 | <a name="output_subscriptions"></a> [subscriptions](#output\_subscriptions) | The configurations for subscriptions to the SNS topic.<br>    `EMAIL` - |
 | <a name="output_type"></a> [type](#output\_type) | The type of the SNS topic. |
 | <a name="output_xray_tracing_enabled"></a> [xray\_tracing\_enabled](#output\_xray\_tracing\_enabled) | Whether to activate AWS X-Ray Active Tracing mode for the SNS topic. |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->

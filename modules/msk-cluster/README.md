@@ -9,7 +9,7 @@ This module creates following resources.
 - `aws_security_group_rule` (optional)
 - `aws_secretsmanager_secret` (optional)
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
@@ -105,4 +105,4 @@ This module creates following resources.
 | <a name="output_name"></a> [name](#output\_name) | The MSK cluster name. |
 | <a name="output_version"></a> [version](#output\_version) | Current version of the MSK Cluster used for updates. |
 | <a name="output_zookeeper_connections"></a> [zookeeper\_connections](#output\_zookeeper\_connections) | A configuration for connecting to the Apache Zookeeper cluster.<br>    `tcp` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster.<br>    `tls` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster via TLS. |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->

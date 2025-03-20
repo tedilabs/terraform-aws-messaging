@@ -7,7 +7,7 @@ This module creates following resources.
 - `aws_cloudwatch_event_archive` (optional)
 - `aws_schemas_discoverer` (optional)
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
@@ -60,4 +60,4 @@ This module creates following resources.
 | <a name="output_id"></a> [id](#output\_id) | The unique identifier for the event bus. |
 | <a name="output_name"></a> [name](#output\_name) | The name of the event bus. |
 | <a name="output_schema_discovery"></a> [schema\_discovery](#output\_schema\_discovery) | The configuration for schema discovery of the event bus. |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->

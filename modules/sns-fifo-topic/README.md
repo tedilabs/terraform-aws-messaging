@@ -6,7 +6,7 @@ This module creates following resources.
 - `aws_sns_topic_policy` (optional)
 - `aws_sns_topic_subscription` (optional)
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
@@ -67,4 +67,4 @@ This module creates following resources.
 | <a name="output_xray_tracing_enabled"></a> [xray\_tracing\_enabled](#output\_xray\_tracing\_enabled) | Whether to activate AWS X-Ray Active Tracing mode for the SNS topic. |
 | <a name="output_z"></a> [z](#output\_z) | The list of log streams for the log group. |
 | <a name="output_zz"></a> [zz](#output\_zz) | The list of log streams for the log group. |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->
