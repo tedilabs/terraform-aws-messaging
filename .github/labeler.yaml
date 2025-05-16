@@ -14,6 +14,11 @@
   - any-glob-to-any-file:
     - modules/msk-cluster/**/*
 
+":floppy_disk: ses-identity":
+- changed-files:
+  - any-glob-to-any-file:
+    - modules/ses-identity/**/*
+
 ":floppy_disk: sns-fifo-topic":
 - changed-files:
   - any-glob-to-any-file:

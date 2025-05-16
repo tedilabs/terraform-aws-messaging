@@ -70,8 +70,30 @@ rule "terraform_unused_required_providers" {
 
 plugin "aws" {
   source  = "github.com/terraform-linters/tflint-ruleset-aws"
-  version = "0.38.0"
+  version = "0.39.0"
 
   enabled = true
   deep_check = false
 }
+
+# INFO: Wrong validation
+rule "aws_route53_record_invalid_health_check_id" {
+  enabled = false
+}
+# INFO: Wrong validation
+rule "aws_route53_record_invalid_name" {
+  enabled = false
+}
+# INFO: Wrong validation
+rule "aws_route53_record_invalid_set_identifier" {
+  enabled = false
+}
+# INFO: Wrong validation
+rule "aws_route53_record_invalid_type" {
+  enabled = false
+}
+# INFO: Wrong validation
+rule "aws_route53_record_invalid_zone_id" {
+  enabled = false
+}
+
