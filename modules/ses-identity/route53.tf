@@ -3,7 +3,7 @@
 ###################################################
 
 resource "aws_route53_record" "dkim" {
-  for_each = (var.dkim.type == "EASY_DKIM" && var.dkim.verification.enabled
+  for_each = (aws_sesv2_email_identity.this.identity_type == "DOMAIN" && var.dkim.type == "EASY_DKIM" && var.dkim.verification.enabled
     ? toset(aws_sesv2_email_identity.this.dkim_signing_attributes[0].tokens)
     : []
   )

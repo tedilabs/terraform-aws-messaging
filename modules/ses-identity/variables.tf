@@ -13,6 +13,22 @@ variable "configuration_set" {
   nullable    = true
 }
 
+variable "policies" {
+  description = <<EOF
+  (Optional) A map of authorization policies for the SES identity. The authorization policy is a JSON document that you attach to an identity to specify what API actions you're allowing or denying for that identity, and under which conditions. Each key is the name of the policy, and the value is the policy document.
+  EOF
+  type        = map(string)
+  default     = {}
+  nullable    = false
+}
+
+variable "dkim" {
+  description = <<EOF
+  (Optional) The configuration for the DKIM (DomainKeys Identified Mail). `dkim` as defined below.
+    (Optional) `type` - Whether to use either Easy DKIM (`EASY_DKIM`) or Bring Your Own DKIM (`BYODKIM`), and depending on your choice, you'll have to configure the signing key length of the private key. Valid values are `EASY_DKIM` and `BYODKIM`. Defaults to `EASY_DKIM`.
+    (Optional) `signing_key_type` - The key type of the future DKIM key pair to be generated. This can be changed at most once per day. The signing key length of the private key. Valid values are `RSA_1024` and `RSA_2048`. Defaults to `RSA_2048`. Only required if `type` is `EASY_DKIM`.
+    (Optional) `private_key` - A private key that's used to generate a DKIM signature. The private key must use 1024 or 2048-bit RSA encryption, and must be encoded using base64 encoding. Only required if `type` is `BYODKIM`.
+    (Optional) `selector_name` - A string that's used to identify a public key in the DNS configuration for a domain. Only required if `type` is `BYODKIM`.
 variable "dkim" {
   description = <<EOF
   (Optional) The configuration for the DKIM (DomainKeys Identified Mail). `dkim` as defined below.
@@ -55,60 +71,49 @@ variable "dkim" {
   }
 }
 
-# variable "display_name" {
-#   description = "(Optional) The display name to use for a topic with SMS subscriptions."
-#   type        = string
-#   default     = ""
-#   nullable    = false
-# }
+variable "email_feedback_forwarding" {
+  description = <<EOF
+  (Optional) The configuration for Email Feedback Forwarding. `email_feedback_forwarding` as defined below.
+    (Optional) `enabled` - Whether to enable email feedback forwarding. Amazon SES will automatically notify you by email when a bounce or a complaint event occurs. If you have another method in place, you can disable this feature to avoid receiving multiple notifications for the same event. Defaults to `true`.
+  EOF
+  type = object({
+    enabled = optional(bool, true)
+  })
+  default  = {}
+  nullable = false
+}
 
-# variable "display_name" {
-#   description = "(Optional) The display name to use for a topic with SMS subscriptions."
-#   type        = string
-#   default     = ""
-#   nullable    = false
-# }
+variable "custom_mail_from" {
+  description = <<EOF
+  (Optional) The configuration for Custom Mail From. Configuring a custom MAIL FROM domain for messages sent from this identity enables the MAIL FROM address to align with the From address. Domain alignment must be achieved in order to be DMARC compliant. `custom_mail_from` as defined below.
+    (Optional) `enabled` - Whether to enable custom mail from.
+    (Optional) `domain` - The custom MAIL FROM domain that you want the verified identity to use. The MAIL FROM domain must meet the following criteria:
+      - It has to be a subdomain of the verified identity.
+      - It can't be used to receive email.
+      - It can't be used in a "From" address if the MAIL FROM domain is a destination for feedback forwarding emails.
+    (Optional) `behavior_on_mx_failure` - The action to take if the MAIL FROM domain is not found or not verified. Valid values are `REJECT_MESSAGE` and `USE_DEFAULT_VALUE`. Defaults to `REJECT_MESSAGE`.
+  EOF
+  type = object({
+    enabled                = optional(bool, false)
+    domain                 = optional(string, "")
+    behavior_on_mx_failure = optional(string, "REJECT_MESSAGE")
+  })
+  default  = {}
+  nullable = false
 
-# variable "content_based_deduplication" {
-#   description = "(Optional) Whether to enable default message deduplication based on message content. If set to `false`, a deduplication ID must be provided for every publish request."
-#   type        = bool
-#   default     = false
-#   nullable    = false
-# }
-
-# variable "policy" {
-#   description = "(Optional) A valid policy JSON document. The resource-based policy defines who can publish or subscribe to the SNS topic."
-#   type        = string
-#   default     = null
-# }
-
-# variable "xray_tracing_enabled" {
-#   description = "(Optional) Whether to activate AWS X-Ray Active Tracing mode for the SNS topic. If set to Active, Amazon SNS will vend X-Ray segment data to topic owner account if the sampled flag in the tracing header is true. Defaults to `false`, and the topic passes through the tracing header it receives from an Amazon SNS publisher to its subscriptions."
-#   type        = bool
-#   default     = false
-#   nullable    = false
-# }
-
-# variable "signature_version" {
-#   description = "(Optional) The signature version corresponds to the hashing algorithm used while creating the signature of the notifications, subscription confirmations, or unsubscribe confirmation messages sent by Amazon SNS. Defaults to `1`."
-#   type        = number
-#   default     = 1
-#   nullable    = false
-# }
-
-# variable "encryption_at_rest" {
-#   description = <<EOF
-#   (Optional) A configuration to encrypt at rest in the SNS topic. Amazon SNS provides in-transit encryption by default. Enabling server-side encryption adds at-rest encryption to your topic. Amazon SNS encrypts your message as soon as it is received. The message is decrypted immediately prior to delivery. `encryption_at_rest` as defined below.
-#     (Optional) `enabled` - Whether to enable encryption at rest. Defaults to `false`.
-#     (Optional) `kms_key` - The ID of AWS KMS CMK (Customer Master Key) used for the encryption.
-#   EOF
-#   type = object({
-#     enabled = optional(bool, false)
-#     kms_key = optional(string)
-#   })
-#   default  = {}
-#   nullable = false
-# }
+  validation {
+    condition     = var.custom_mail_from.enabled ? var.custom_mail_from.domain != "" : true
+    error_message = "The value for `custom_mail_from.domain` must be provided if `custom_mail_from.enabled` is `true`."
+  }
+  validation {
+    condition     = contains(["REJECT_MESSAGE", "USE_DEFAULT_VALUE"], var.custom_mail_from.behavior_on_mx_failure)
+    error_message = "The value for `custom_mail_from.behavior_on_mx_failure` must be either `REJECT_MESSAGE` or `USE_DEFAULT_VALUE`."
+  }
+  validation {
+    condition     = var.custom_mail_from.enabled ? strcontains(var.custom_mail_from.domain, var.name) : true
+    error_message = "The value for `custom_mail_from.domain` must be a subdomain of the verified identity."
+  }
+}
 
 variable "tags" {
   description = "(Optional) A map of tags to add to all resources."

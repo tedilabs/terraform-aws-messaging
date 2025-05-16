@@ -28,6 +28,11 @@ output "configuration_set" {
   value       = aws_sesv2_email_identity.this.configuration_set_name
 }
 
+output "policies" {
+  description = "A set of authorization policy names for the SES identity."
+  value       = keys(aws_sesv2_email_identity_policy.this)
+}
+
 output "dkim" {
   description = "The configuration for the DKIM."
   value = {
@@ -53,6 +58,22 @@ output "dkim" {
         }
       ]
     }
+  }
+}
+
+output "email_feedback_forwarding" {
+  description = "The configuration for the email feedback forwarding."
+  value = {
+    enabled = aws_sesv2_email_identity_feedback_attributes.this.email_forwarding_enabled
+  }
+}
+
+output "custom_mail_from" {
+  description = "The configuration for the custom mail from."
+  value = {
+    enabled                = var.custom_mail_from.enabled
+    domain                 = one(aws_sesv2_email_identity_mail_from_attributes.this[*].mail_from_domain)
+    behavior_on_mx_failure = one(aws_sesv2_email_identity_mail_from_attributes.this[*].behavior_on_mx_failure)
   }
 }
 
