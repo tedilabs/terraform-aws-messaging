@@ -84,3 +84,18 @@ output "custom_mail_from" {
 #     if !contains(["arn", "id", "email_identity", "identity_type", "tags", "tags_all", "dkim_signing_attributes", "verified_for_sending_status", "configuration_set_name"], k)
 #   }
 # }
+output "resource_group" {
+  description = "The resource group created to manage resources in this module."
+  value = merge(
+    {
+      enabled = var.resource_group.enabled && var.module_tags_enabled
+    },
+    (var.resource_group.enabled && var.module_tags_enabled
+      ? {
+        arn  = module.resource_group[0].arn
+        name = module.resource_group[0].name
+      }
+      : {}
+    )
+  )
+}
