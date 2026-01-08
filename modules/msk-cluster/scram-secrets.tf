@@ -19,7 +19,7 @@ resource "random_password" "this" {
 # TODO: Create an independant module for msk-scram-users
 module "secret" {
   source  = "tedilabs/secret/aws//modules/secrets-manager-secret"
-  version = "~> 0.5.0"
+  version = "~> 0.7.1"
 
   for_each = var.authentication.sasl_scram.users
 
