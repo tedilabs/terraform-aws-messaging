@@ -13,7 +13,7 @@ locals {
 
 module "security_group" {
   source  = "tedilabs/network/aws//modules/security-group"
-  version = "~> 0.32.0"
+  version = "~> 1.2.1"
 
   name        = "msk-${var.name}"
   description = "Security group for MSK Cluster."
