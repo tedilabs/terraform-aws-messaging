@@ -44,6 +44,7 @@ variable "default_execution_role" {
     (Optional) `description` - The description of the default execution role.
     (Optional) `policies` - A list of IAM policy ARNs to attach to the default execution role. Defaults to `[]`.
     (Optional) `inline_policies` - A Map of inline IAM policies to attach to the default execution role. (`name` => `policy`).
+    (Optional) `permissions_boundary` - The ARN of the IAM policy to use as permissions boundary for the default execution role.
   EOF
   type = object({
     enabled     = optional(bool, true)
@@ -51,8 +52,9 @@ variable "default_execution_role" {
     path        = optional(string, "/")
     description = optional(string, "Managed by Terraform.")
 
-    policies        = optional(list(string), [])
-    inline_policies = optional(map(string), {})
+    policies             = optional(list(string), [])
+    inline_policies      = optional(map(string), {})
+    permissions_boundary = optional(string)
   })
   default  = {}
   nullable = false
