@@ -1,3 +1,8 @@
+output "region" {
+  description = "The AWS region this module resources resides in."
+  value       = aws_sesv2_email_identity.this.region
+}
+
 output "arn" {
   description = "The ARN of the SES identity."
   value       = aws_sesv2_email_identity.this.arn
@@ -36,13 +41,19 @@ output "policies" {
 output "dkim" {
   description = "The configuration for the DKIM."
   value = {
-    type                     = var.dkim.type
-    status                   = one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].status)
-    current_signing_key_type = local.signing_key_type_reverse[one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].current_signing_key_length)]
-    signing_key_type         = local.signing_key_type_reverse[one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].next_signing_key_length)]
-    selector_name            = one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].domain_signing_selector)
-    origin                   = one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].signing_attributes_origin)
-    last_key_generated_at    = one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].last_key_generation_timestamp)
+    type   = var.dkim.type
+    status = one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].status)
+    current_signing_key_type = (one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].current_signing_key_length) != null
+      ? local.signing_key_type_reverse[one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].current_signing_key_length)]
+      : null
+    )
+    signing_key_type = (one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].next_signing_key_length) != null
+      ? local.signing_key_type_reverse[one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].next_signing_key_length)]
+      : null
+    )
+    selector_name         = one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].domain_signing_selector)
+    origin                = one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].signing_attributes_origin)
+    last_key_generated_at = one(aws_sesv2_email_identity.this.dkim_signing_attributes[*].last_key_generation_timestamp)
 
     verification = {
       enabled = var.dkim.verification.enabled
@@ -77,13 +88,6 @@ output "custom_mail_from" {
   }
 }
 
-# output "debug" {
-#   value = {
-#     for k, v in aws_sesv2_email_identity.this :
-#     k => v
-#     if !contains(["arn", "id", "email_identity", "identity_type", "tags", "tags_all", "dkim_signing_attributes", "verified_for_sending_status", "configuration_set_name"], k)
-#   }
-# }
 output "resource_group" {
   description = "The resource group created to manage resources in this module."
   value = merge(
@@ -99,3 +103,11 @@ output "resource_group" {
     )
   )
 }
+
+# output "debug" {
+#   value = {
+#     for k, v in aws_sesv2_email_identity.this :
+#     k => v
+#     if !contains(["arn", "id", "email_identity", "identity_type", "tags", "tags_all", "dkim_signing_attributes", "verified_for_sending_status", "configuration_set_name"], k)
+#   }
+# }

@@ -15,7 +15,7 @@ locals {
     "il-central-1"   = "dkim.il-central-1.amazonses.com"
     "us-gov-east-1"  = "dkim.us-gov-east-1.amazonses.com"
   }
-  dkim_domain = lookup(local.dkim_domains, data.aws_region.current.name, local.dkim_domains["default"])
+  dkim_domain = lookup(local.dkim_domains, data.aws_region.current.region, local.dkim_domains["default"])
 }
 
 data "aws_region" "current" {}
@@ -36,4 +36,3 @@ resource "aws_route53_record" "dkim" {
   ttl             = "600"
   allow_overwrite = true
 }
-

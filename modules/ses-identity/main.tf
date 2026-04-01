@@ -31,6 +31,8 @@ locals {
 ###################################################
 
 resource "aws_sesv2_email_identity" "this" {
+  region = var.region
+
   email_identity         = var.name
   configuration_set_name = var.configuration_set
 
@@ -71,6 +73,8 @@ resource "aws_sesv2_email_identity" "this" {
 ###################################################
 
 resource "aws_sesv2_email_identity_feedback_attributes" "this" {
+  region = var.region
+
   email_identity           = aws_sesv2_email_identity.this.email_identity
   email_forwarding_enabled = var.email_feedback_forwarding.enabled
 }
@@ -82,6 +86,8 @@ resource "aws_sesv2_email_identity_feedback_attributes" "this" {
 
 resource "aws_sesv2_email_identity_mail_from_attributes" "this" {
   count = var.custom_mail_from.enabled ? 1 : 0
+
+  region = var.region
 
   email_identity = aws_sesv2_email_identity.this.email_identity
 
