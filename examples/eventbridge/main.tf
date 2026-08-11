@@ -18,7 +18,7 @@ locals {
 module "event_bus" {
   source = "../../modules/eventbridge-event-bus"
   # source  = "tedilabs/messaging/aws//modules/eventbridge-event-bus"
-  # version = "~> 0.2.0"
+  # version = "~> 0.3.0"
 
   name = "aws"
   policy = jsonencode(yamldecode(<<EOF

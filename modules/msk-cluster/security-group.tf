@@ -13,7 +13,7 @@ locals {
 
 module "security_group" {
   source  = "tedilabs/network/aws//modules/security-group"
-  version = "~> 0.32.0"
+  version = "~> 1.2.0"
 
   name        = "msk-${var.name}"
   description = "Security group for MSK Cluster."
@@ -127,8 +127,11 @@ module "security_group" {
   )
 
   revoke_rules_on_delete = true
-  resource_group_enabled = false
-  module_tags_enabled    = false
+
+  resource_group = {
+    enabled = false
+  }
+  module_tags_enabled = false
 
   tags = merge(
     local.module_tags,

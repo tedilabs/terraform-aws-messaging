@@ -10,7 +10,7 @@ provider "aws" {
 module "topic" {
   source = "../../modules/sns-standard-topic"
   # source  = "tedilabs/messaging/aws//modules/sns-standard-topic"
-  # version = "~> 0.2.0"
+  # version = "~> 0.3.0"
 
   name         = "standard-test-email"
   display_name = "Standard Test Email"

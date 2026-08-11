@@ -19,7 +19,7 @@ resource "random_password" "this" {
 # TODO: Create an independant module for msk-scram-users
 module "secret" {
   source  = "tedilabs/secret/aws//modules/secrets-manager-secret"
-  version = "~> 0.5.0"
+  version = "~> 0.7.0"
 
   for_each = var.authentication.sasl_scram.users
 
@@ -27,7 +27,7 @@ module "secret" {
   description = "The SASL/SCRAM secret to provide username and password for MSK cluster authenticaiton."
 
   type = "KEY_VALUE"
-  value = {
+  kv_value = {
     username = each.key
     password = random_password.this[each.key].result
   }
@@ -38,8 +38,10 @@ module "secret" {
 
   deletion_window_in_days = 7
 
-  resource_group_enabled = false
-  module_tags_enabled    = false
+  resource_group = {
+    enabled = false
+  }
+  module_tags_enabled = false
 
   tags = merge(
     local.module_tags,
