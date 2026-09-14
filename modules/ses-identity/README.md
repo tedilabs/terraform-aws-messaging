@@ -12,26 +12,26 @@ This module creates following resources.
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.10 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.84 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.38.0 |
+| ---- | ------- |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.84 |
 
 ## Modules
 
 | Name | Source | Version |
-|------|--------|---------|
+| ---- | ------ | ------- |
 | <a name="module_resource_group"></a> [resource\_group](#module\_resource\_group) | tedilabs/misc/aws//modules/resource-group | ~> 0.12.0 |
 
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [aws_route53_record.dkim](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
 | [aws_sesv2_email_identity.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sesv2_email_identity) | resource |
 | [aws_sesv2_email_identity_feedback_attributes.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sesv2_email_identity_feedback_attributes) | resource |
@@ -42,7 +42,7 @@ This module creates following resources.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_name"></a> [name](#input\_name) | (Required) The domain name of the SES domain identity. | `string` | n/a | yes |
 | <a name="input_configuration_set"></a> [configuration\_set](#input\_configuration\_set) | (Optional) The configuration set to use by default when sending from this identity. Note that any configuration set defined in the email sending request takes precedence. | `string` | `null` | no |
 | <a name="input_custom_mail_from"></a> [custom\_mail\_from](#input\_custom\_mail\_from) | (Optional) The configuration for Custom Mail From. Configuring a custom MAIL FROM domain for messages sent from this identity enables the MAIL FROM address to align with the From address. Domain alignment must be achieved in order to be DMARC compliant. `custom_mail_from` as defined below.<br/>    (Optional) `enabled` - Whether to enable custom mail from.<br/>    (Optional) `domain` - The custom MAIL FROM domain that you want the verified identity to use. The MAIL FROM domain must meet the following criteria:<br/>      - It has to be a subdomain of the verified identity.<br/>      - It can't be used to receive email.<br/>      - It can't be used in a "From" address if the MAIL FROM domain is a destination for feedback forwarding emails.<br/>    (Optional) `behavior_on_mx_failure` - The action to take if the MAIL FROM domain is not found or not verified. Valid values are `REJECT_MESSAGE` and `USE_DEFAULT_VALUE`. Defaults to `REJECT_MESSAGE`. | <pre>object({<br/>    enabled                = optional(bool, false)<br/>    domain                 = optional(string, "")<br/>    behavior_on_mx_failure = optional(string, "REJECT_MESSAGE")<br/>  })</pre> | `{}` | no |
@@ -57,7 +57,7 @@ This module creates following resources.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_arn"></a> [arn](#output\_arn) | The ARN of the SES identity. |
 | <a name="output_configuration_set"></a> [configuration\_set](#output\_configuration\_set) | The configuration set to use by default when sending from this identity. |
 | <a name="output_custom_mail_from"></a> [custom\_mail\_from](#output\_custom\_mail\_from) | The configuration for the custom mail from. |
