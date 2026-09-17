@@ -1,3 +1,8 @@
+output "region" {
+  description = "The AWS region this module resources resides in."
+  value       = aws_sns_topic.this.region
+}
+
 output "arn" {
   description = "The ARN of the SNS topic."
   value       = aws_sns_topic.this.arn

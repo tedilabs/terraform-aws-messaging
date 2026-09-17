@@ -23,6 +23,8 @@ locals {
 # - `name_prefix`
 # - `delivery_policy`
 resource "aws_sns_topic" "this" {
+  region = var.region
+
   name         = var.name
   display_name = var.display_name
   fifo_topic   = true
