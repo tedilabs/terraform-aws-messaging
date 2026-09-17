@@ -230,9 +230,18 @@ variable "aws_service_targets" {
   description = <<EOF
   (Optional) The configuration to manage the specified AWS service targets for the rule. Targets are the resources that are invoked when a rule is triggered. Each item of `aws_service_targets` as defined below.
     (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
-    (Required) `type` - The AWS resource type of the target. Valid values are `CLOUDWATCH_LOG_GROUP`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
+    (Required) `type` - The AWS resource type of the target. Valid values are `CLOUDWATCH_LOG_GROUP`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
     (Optional) `cloudwatch_log_group` - The configuration for CloudWatch log group target. `cloudwatch_log_group` as defined below.
       (Required) `arn` - The Amazon Resource Name (ARN) of the CloudWatch log group.
+    (Optional) `firehose_delivery_stream` - The configuration for Amazon Data Firehose delivery stream target. `firehose_delivery_stream` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the Firehose delivery stream.
+    (Optional) `kinesis_stream` - The configuration for Kinesis data stream target. `kinesis_stream` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the Kinesis data stream.
+      (Optional) `partition_key_path` - The JSON path to be extracted from the event and used as the partition key. If not provided, the event ID is used as the partition key.
+    (Optional) `lambda_function` - The configuration for Lambda function target. `lambda_function` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the Lambda function.
+    (Optional) `sfn_state_machine` - The configuration for Step Functions state machine target. `sfn_state_machine` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the Step Functions state machine.
     (Optional) `sns_topic` - The configuration for SNS topic target. `sns_topic` as defined below.
       (Required) `arn` - The Amazon Resource Name (ARN) of the SNS topic.
     (Optional) `sqs_queue` - The configuration for SQS queue target. `sqs_queue` as defined below.
@@ -251,7 +260,7 @@ variable "aws_service_targets" {
         `CHATBOT_CUSTOM_NOTIFICATION` - The extended version of `TRANSFORMER` input type.
       (Optional) `reference_variables` - A map of key-value pairs specified in the form of JSONPath (for example, `time = $.time`). Define variables that use JSON path to reference values in the original event source. Can define up to 100 variables. Only required if `input.type` is `TRANSFORMER` or `CHATBOT_CUSTOM_NOTIFICATION`.
 
-    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`.
+    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`. Only used by the target types which are invoked with an IAM role (`FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `SFN_STATE_MACHINE`, `SSM_RUN_COMMAND`); the other target types are invoked through the resource-based policies of the targets.
 
     (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
       (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
@@ -264,6 +273,19 @@ variable "aws_service_targets" {
     id   = string
     type = string
     cloudwatch_log_group = optional(object({
+      arn = string
+    }))
+    firehose_delivery_stream = optional(object({
+      arn = string
+    }))
+    kinesis_stream = optional(object({
+      arn                = string
+      partition_key_path = optional(string)
+    }))
+    lambda_function = optional(object({
+      arn = string
+    }))
+    sfn_state_machine = optional(object({
       arn = string
     }))
     sns_topic = optional(object({
@@ -305,15 +327,19 @@ variable "aws_service_targets" {
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
-      contains(["CLOUDWATCH_LOG_GROUP", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
+      contains(["CLOUDWATCH_LOG_GROUP", "FIREHOSE_DELIVERY_STREAM", "KINESIS_STREAM", "LAMBDA_FUNCTION", "SFN_STATE_MACHINE", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
     ])
-    error_message = "Valid values for `type` are `CLOUDWATCH_LOG_GROUP`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
+    error_message = "Valid values for `type` are `CLOUDWATCH_LOG_GROUP`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
   }
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
       anytrue([
         target.type == "CLOUDWATCH_LOG_GROUP" ? strcontains(target.cloudwatch_log_group.arn, ":log-group:") : false,
+        target.type == "FIREHOSE_DELIVERY_STREAM" ? strcontains(target.firehose_delivery_stream.arn, ":deliverystream/") : false,
+        target.type == "KINESIS_STREAM" ? strcontains(target.kinesis_stream.arn, ":stream/") : false,
+        target.type == "LAMBDA_FUNCTION" ? strcontains(target.lambda_function.arn, ":function:") : false,
+        target.type == "SFN_STATE_MACHINE" ? strcontains(target.sfn_state_machine.arn, ":stateMachine:") : false,
         target.type == "SNS_TOPIC" ? strcontains(target.sns_topic.arn, ":sns:") : false,
         target.type == "SQS_QUEUE" ? strcontains(target.sqs_queue.arn, ":sqs:") : false,
         target.type == "SSM_RUN_COMMAND" ? strcontains(target.ssm_run_command.document, ":document/") : false,
