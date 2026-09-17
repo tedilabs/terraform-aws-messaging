@@ -230,7 +230,7 @@ variable "aws_service_targets" {
   description = <<EOF
   (Optional) The configuration to manage the specified AWS service targets for the rule. Targets are the resources that are invoked when a rule is triggered. Each item of `aws_service_targets` as defined below.
     (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
-    (Required) `type` - The AWS resource type of the target. Valid values are `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
+    (Required) `type` - The AWS resource type of the target. Valid values are `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `REDSHIFT_CLUSTER`, `SAGEMAKER_PIPELINE`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
     (Optional) `batch_job` - The configuration for Batch job target. `batch_job` as defined below.
       (Required) `job_queue` - The Amazon Resource Name (ARN) of the Batch job queue to submit the job to.
       (Required) `job_definition` - The Amazon Resource Name (ARN) or the name of the Batch job definition to use. If the revision is omitted, the latest active revision is used.
@@ -271,6 +271,17 @@ variable "aws_service_targets" {
       (Optional) `partition_key_path` - The JSON path to be extracted from the event and used as the partition key. If not provided, the event ID is used as the partition key.
     (Optional) `lambda_function` - The configuration for Lambda function target. `lambda_function` as defined below.
       (Required) `arn` - The Amazon Resource Name (ARN) of the Lambda function.
+    (Optional) `redshift_cluster` - The configuration for Redshift cluster target, which runs a SQL statement through the Redshift Data API. `redshift_cluster` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the Redshift cluster or the Redshift Serverless workgroup.
+      (Required) `database` - The name of the database to run the statement against.
+      (Optional) `db_user` - The database user name to authenticate with temporary credentials. Only used with a Redshift cluster. Conflicts with `secret`.
+      (Optional) `secret` - The Amazon Resource Name (ARN) of the Secrets Manager secret that contains the database credentials. Conflicts with `db_user`.
+      (Optional) `sql` - The SQL statement to run.
+      (Optional) `statement_name` - The name of the SQL statement.
+      (Optional) `with_event_enabled` - Whether to send an event back to EventBridge after the SQL statement runs. Defaults to `false`.
+    (Optional) `sagemaker_pipeline` - The configuration for SageMaker pipeline target. `sagemaker_pipeline` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the SageMaker pipeline.
+      (Optional) `parameters` - A map of parameters to pass to the pipeline execution (`name` => `value`). Maximum of 200.
     (Optional) `sfn_state_machine` - The configuration for Step Functions state machine target. `sfn_state_machine` as defined below.
       (Required) `arn` - The Amazon Resource Name (ARN) of the Step Functions state machine.
     (Optional) `sns_topic` - The configuration for SNS topic target. `sns_topic` as defined below.
@@ -291,7 +302,7 @@ variable "aws_service_targets" {
         `CHATBOT_CUSTOM_NOTIFICATION` - The extended version of `TRANSFORMER` input type.
       (Optional) `reference_variables` - A map of key-value pairs specified in the form of JSONPath (for example, `time = $.time`). Define variables that use JSON path to reference values in the original event source. Can define up to 100 variables. Only required if `input.type` is `TRANSFORMER` or `CHATBOT_CUSTOM_NOTIFICATION`.
 
-    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`. Only used by the target types which are invoked with an IAM role (`BATCH_JOB`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `SFN_STATE_MACHINE`, `SSM_RUN_COMMAND`); the other target types are invoked through the resource-based policies of the targets.
+    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`. Only used by the target types which are invoked with an IAM role (`BATCH_JOB`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `REDSHIFT_CLUSTER`, `SAGEMAKER_PIPELINE`, `SFN_STATE_MACHINE`, `SSM_RUN_COMMAND`); the other target types are invoked through the resource-based policies of the targets.
 
     (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
       (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
@@ -353,6 +364,19 @@ variable "aws_service_targets" {
     lambda_function = optional(object({
       arn = string
     }))
+    redshift_cluster = optional(object({
+      arn                = string
+      database           = string
+      db_user            = optional(string)
+      secret             = optional(string)
+      sql                = optional(string)
+      statement_name     = optional(string)
+      with_event_enabled = optional(bool, false)
+    }))
+    sagemaker_pipeline = optional(object({
+      arn        = string
+      parameters = optional(map(string), {})
+    }))
     sfn_state_machine = optional(object({
       arn = string
     }))
@@ -395,9 +419,9 @@ variable "aws_service_targets" {
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
-      contains(["BATCH_JOB", "CLOUDWATCH_LOG_GROUP", "ECS_TASK", "FIREHOSE_DELIVERY_STREAM", "KINESIS_STREAM", "LAMBDA_FUNCTION", "SFN_STATE_MACHINE", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
+      contains(["BATCH_JOB", "CLOUDWATCH_LOG_GROUP", "ECS_TASK", "FIREHOSE_DELIVERY_STREAM", "KINESIS_STREAM", "LAMBDA_FUNCTION", "REDSHIFT_CLUSTER", "SAGEMAKER_PIPELINE", "SFN_STATE_MACHINE", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
     ])
-    error_message = "Valid values for `type` are `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
+    error_message = "Valid values for `type` are `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `REDSHIFT_CLUSTER`, `SAGEMAKER_PIPELINE`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
   }
   validation {
     condition = alltrue([
@@ -409,6 +433,8 @@ variable "aws_service_targets" {
         target.type == "FIREHOSE_DELIVERY_STREAM" ? strcontains(target.firehose_delivery_stream.arn, ":deliverystream/") : false,
         target.type == "KINESIS_STREAM" ? strcontains(target.kinesis_stream.arn, ":stream/") : false,
         target.type == "LAMBDA_FUNCTION" ? strcontains(target.lambda_function.arn, ":function:") : false,
+        target.type == "REDSHIFT_CLUSTER" ? (strcontains(target.redshift_cluster.arn, ":cluster:") || strcontains(target.redshift_cluster.arn, ":workgroup/")) : false,
+        target.type == "SAGEMAKER_PIPELINE" ? strcontains(target.sagemaker_pipeline.arn, ":pipeline/") : false,
         target.type == "SFN_STATE_MACHINE" ? strcontains(target.sfn_state_machine.arn, ":stateMachine:") : false,
         target.type == "SNS_TOPIC" ? strcontains(target.sns_topic.arn, ":sns:") : false,
         target.type == "SQS_QUEUE" ? strcontains(target.sqs_queue.arn, ":sqs:") : false,
@@ -427,6 +453,25 @@ variable "aws_service_targets" {
       if target.type == "BATCH_JOB"
     ])
     error_message = "Valid value for `batch_job.array_size` is between `2` and `10000`, and for `batch_job.job_attempts` is between `1` and `10`."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.aws_service_targets :
+      alltrue([
+        target.redshift_cluster.db_user == null || target.redshift_cluster.secret == null,
+        target.redshift_cluster.db_user == null || strcontains(target.redshift_cluster.arn, ":cluster:"),
+      ])
+      if target.type == "REDSHIFT_CLUSTER"
+    ])
+    error_message = "`redshift_cluster.db_user` conflicts with `redshift_cluster.secret`, and is only supported for a Redshift cluster (not a Redshift Serverless workgroup)."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.aws_service_targets :
+      length(target.sagemaker_pipeline.parameters) <= 200
+      if target.type == "SAGEMAKER_PIPELINE"
+    ])
+    error_message = "A maximum of 200 `sagemaker_pipeline.parameters` are allowed."
   }
   validation {
     condition = alltrue([
