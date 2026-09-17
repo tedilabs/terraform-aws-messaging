@@ -23,6 +23,8 @@ locals {
 # - `name_prefix`
 # - `content_based_deduplication`
 resource "aws_sns_topic" "this" {
+  region = var.region
+
   name         = var.name
   display_name = var.display_name
   fifo_topic   = false

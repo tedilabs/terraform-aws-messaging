@@ -24,6 +24,8 @@ resource "aws_sns_topic_subscription" "email" {
     subscription.email => subscription
   }
 
+  region = var.region
+
   topic_arn = aws_sns_topic.this.arn
 
   protocol = "email"
@@ -62,6 +64,8 @@ resource "aws_sns_topic_subscription" "email_json" {
     for subscription in var.subscriptions_by_email_json :
     subscription.email => subscription
   }
+
+  region = var.region
 
   topic_arn = aws_sns_topic.this.arn
 
@@ -102,6 +106,8 @@ resource "aws_sns_topic_subscription" "lambda" {
     subscription.name => subscription
   }
 
+  region = var.region
+
   topic_arn = aws_sns_topic.this.arn
 
   protocol = "lambda"
@@ -139,6 +145,8 @@ resource "aws_sns_topic_subscription" "sqs" {
     for subscription in var.subscriptions_by_sqs :
     subscription.name => subscription
   }
+
+  region = var.region
 
   topic_arn = aws_sns_topic.this.arn
 
