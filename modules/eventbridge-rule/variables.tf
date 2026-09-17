@@ -230,7 +230,16 @@ variable "aws_service_targets" {
   description = <<EOF
   (Optional) The configuration to manage the specified AWS service targets for the rule. Targets are the resources that are invoked when a rule is triggered. Each item of `aws_service_targets` as defined below.
     (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
-    (Required) `type` - The AWS resource type of the target. Valid values are `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `REDSHIFT_CLUSTER`, `SAGEMAKER_PIPELINE`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
+    (Required) `type` - The AWS resource type of the target. Valid values are `API_GATEWAY_ENDPOINT`, `APPSYNC_GRAPHQL_API`, `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `REDSHIFT_CLUSTER`, `SAGEMAKER_PIPELINE`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
+    (Optional) `api_gateway_endpoint` - The configuration for API Gateway endpoint target. `api_gateway_endpoint` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the API Gateway endpoint to invoke, in the form of `arn:aws:execute-api:$${region}:$${account_id}:$${api_id}/$${stage}/$${method}/$${path}`. Wildcards (`*`) in the path are substituted with `http.path_parameters`.
+      (Optional) `http` - The configuration for the HTTP request sent to the endpoint. `http` as defined below.
+        (Optional) `headers` - A map of HTTP headers to add to the request (`name` => `value`).
+        (Optional) `path_parameters` - A list of values to substitute for the path parameter wildcards (`*`) of the endpoint, in order.
+        (Optional) `query_parameters` - A map of query string parameters to add to the request (`name` => `value`).
+    (Optional) `appsync_graphql_api` - The configuration for AppSync GraphQL API target. `appsync_graphql_api` as defined below.
+      (Required) `arn` - The Amazon Resource Name (ARN) of the AppSync GraphQL API endpoint, in the form of `arn:aws:appsync:$${region}:$${account_id}:endpoints/graphql-api/$${api_id}`.
+      (Required) `graphql_operation` - The GraphQL operation (a mutation or a query) to run against the API. Maximum of 1048576 characters.
     (Optional) `batch_job` - The configuration for Batch job target. `batch_job` as defined below.
       (Required) `job_queue` - The Amazon Resource Name (ARN) of the Batch job queue to submit the job to.
       (Required) `job_definition` - The Amazon Resource Name (ARN) or the name of the Batch job definition to use. If the revision is omitted, the latest active revision is used.
@@ -302,7 +311,7 @@ variable "aws_service_targets" {
         `CHATBOT_CUSTOM_NOTIFICATION` - The extended version of `TRANSFORMER` input type.
       (Optional) `reference_variables` - A map of key-value pairs specified in the form of JSONPath (for example, `time = $.time`). Define variables that use JSON path to reference values in the original event source. Can define up to 100 variables. Only required if `input.type` is `TRANSFORMER` or `CHATBOT_CUSTOM_NOTIFICATION`.
 
-    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`. Only used by the target types which are invoked with an IAM role (`BATCH_JOB`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `REDSHIFT_CLUSTER`, `SAGEMAKER_PIPELINE`, `SFN_STATE_MACHINE`, `SSM_RUN_COMMAND`); the other target types are invoked through the resource-based policies of the targets.
+    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`. Only used by the target types which are invoked with an IAM role (`API_GATEWAY_ENDPOINT`, `APPSYNC_GRAPHQL_API`, `BATCH_JOB`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `REDSHIFT_CLUSTER`, `SAGEMAKER_PIPELINE`, `SFN_STATE_MACHINE`, `SSM_RUN_COMMAND`); the other target types are invoked through the resource-based policies of the targets.
 
     (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
       (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
@@ -314,6 +323,18 @@ variable "aws_service_targets" {
   type = list(object({
     id   = string
     type = string
+    api_gateway_endpoint = optional(object({
+      arn = string
+      http = optional(object({
+        headers          = optional(map(string), {})
+        path_parameters  = optional(list(string), [])
+        query_parameters = optional(map(string), {})
+      }), {})
+    }))
+    appsync_graphql_api = optional(object({
+      arn               = string
+      graphql_operation = string
+    }))
     batch_job = optional(object({
       job_queue      = string
       job_definition = string
@@ -419,14 +440,16 @@ variable "aws_service_targets" {
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
-      contains(["BATCH_JOB", "CLOUDWATCH_LOG_GROUP", "ECS_TASK", "FIREHOSE_DELIVERY_STREAM", "KINESIS_STREAM", "LAMBDA_FUNCTION", "REDSHIFT_CLUSTER", "SAGEMAKER_PIPELINE", "SFN_STATE_MACHINE", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
+      contains(["API_GATEWAY_ENDPOINT", "APPSYNC_GRAPHQL_API", "BATCH_JOB", "CLOUDWATCH_LOG_GROUP", "ECS_TASK", "FIREHOSE_DELIVERY_STREAM", "KINESIS_STREAM", "LAMBDA_FUNCTION", "REDSHIFT_CLUSTER", "SAGEMAKER_PIPELINE", "SFN_STATE_MACHINE", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
     ])
-    error_message = "Valid values for `type` are `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `REDSHIFT_CLUSTER`, `SAGEMAKER_PIPELINE`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
+    error_message = "Valid values for `type` are `API_GATEWAY_ENDPOINT`, `APPSYNC_GRAPHQL_API`, `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `REDSHIFT_CLUSTER`, `SAGEMAKER_PIPELINE`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
   }
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
       anytrue([
+        target.type == "API_GATEWAY_ENDPOINT" ? strcontains(target.api_gateway_endpoint.arn, ":execute-api:") : false,
+        target.type == "APPSYNC_GRAPHQL_API" ? strcontains(target.appsync_graphql_api.arn, ":endpoints/graphql-api/") : false,
         target.type == "BATCH_JOB" ? strcontains(target.batch_job.job_queue, ":job-queue/") : false,
         target.type == "CLOUDWATCH_LOG_GROUP" ? strcontains(target.cloudwatch_log_group.arn, ":log-group:") : false,
         target.type == "ECS_TASK" ? strcontains(target.ecs_task.cluster, ":cluster/") && strcontains(target.ecs_task.task_definition, ":task-definition/") : false,
