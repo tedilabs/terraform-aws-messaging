@@ -30,6 +30,44 @@ variable "content_based_deduplication" {
   nullable    = false
 }
 
+variable "throughput_scope" {
+  description = <<EOF
+  (Optional) The throughput scope of the FIFO topic. Valid values are `TOPIC` and `MESSAGE_GROUP`. Defaults to `TOPIC`.
+    `TOPIC` - The throughput quota of the FIFO topic applies to the entire topic.
+    `MESSAGE_GROUP` - The throughput quota of the FIFO topic applies to each message group individually, so the topic can scale beyond the topic-level quota by spreading messages across message groups.
+  EOF
+  type        = string
+  default     = "TOPIC"
+  nullable    = false
+
+  validation {
+    condition     = contains(["TOPIC", "MESSAGE_GROUP"], var.throughput_scope)
+    error_message = "Valid values for `throughput_scope` are `TOPIC` and `MESSAGE_GROUP`."
+  }
+}
+
+variable "message_archiving" {
+  description = <<EOF
+  (Optional) A configuration for message archiving of the FIFO topic. Amazon SNS stores the messages published to the topic in an archive, so that subscribers can replay them later. `message_archiving` as defined below.
+    (Optional) `enabled` - Whether to enable message archiving. Defaults to `false`.
+    (Optional) `retention_in_days` - The number of days to retain messages in the archive. Valid value is between `1` and `365`. Defaults to `30`.
+  EOF
+  type = object({
+    enabled           = optional(bool, false)
+    retention_in_days = optional(number, 30)
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      var.message_archiving.retention_in_days >= 1,
+      var.message_archiving.retention_in_days <= 365,
+    ])
+    error_message = "Valid value for `message_archiving.retention_in_days` is between `1` and `365`."
+  }
+}
+
 variable "policy" {
   description = "(Optional) A valid policy JSON document. The resource-based policy defines who can publish or subscribe to the SNS topic."
   type        = string
@@ -62,6 +100,72 @@ variable "encryption_at_rest" {
   })
   default  = {}
   nullable = false
+}
+
+variable "delivery_status_logging" {
+  description = <<EOF
+  (Optional) A configuration for the delivery status logging of the SNS topic. Amazon SNS logs the delivery status of notification messages sent to the endpoints of the supported types to CloudWatch Logs. Each key of `delivery_status_logging` is an endpoint type as defined below.
+    (Optional) `application` - The configuration for the delivery status logging of the platform application endpoints.
+    (Optional) `firehose` - The configuration for the delivery status logging of the Amazon Data Firehose endpoints.
+    (Optional) `http` - The configuration for the delivery status logging of the HTTP/S endpoints.
+    (Optional) `lambda` - The configuration for the delivery status logging of the Lambda function endpoints.
+    (Optional) `sqs` - The configuration for the delivery status logging of the SQS queue endpoints.
+  Each value of `delivery_status_logging` as defined below.
+    (Optional) `enabled` - Whether to enable the delivery status logging for the endpoint type. Defaults to `false`.
+    (Optional) `success_feedback_role` - The ARN of the IAM role permitted to receive success feedback for the endpoint type. At least one of `success_feedback_role` or `failure_feedback_role` is required if `enabled` is `true`.
+    (Optional) `success_feedback_sample_rate` - The percentage of successful deliveries to log. Valid value is between `0` and `100`. Defaults to `100`.
+    (Optional) `failure_feedback_role` - The ARN of the IAM role permitted to receive failure feedback for the endpoint type. At least one of `success_feedback_role` or `failure_feedback_role` is required if `enabled` is `true`.
+  EOF
+  type = object({
+    application = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+    firehose = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+    http = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+    lambda = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+    sqs = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for type, config in var.delivery_status_logging :
+      config.success_feedback_role != null || config.failure_feedback_role != null
+      if config.enabled
+    ])
+    error_message = "At least one of `success_feedback_role` or `failure_feedback_role` is required for each enabled endpoint type of `delivery_status_logging`."
+  }
+  validation {
+    condition = alltrue([
+      for type, config in var.delivery_status_logging :
+      config.success_feedback_sample_rate >= 0 && config.success_feedback_sample_rate <= 100
+    ])
+    error_message = "Valid value for `success_feedback_sample_rate` of each endpoint type of `delivery_status_logging` is between `0` and `100`."
+  }
 }
 
 variable "tags" {
