@@ -42,6 +42,13 @@ variable "state" {
   }
 }
 
+variable "force_destroy" {
+  description = "(Optional) Whether to delete the rule and its targets even if the rule is a managed rule created by an AWS service. Defaults to `false`."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
 variable "default_execution_role" {
   description = <<EOF
   (Optional) A configuration for the default execution role to use for the rule that is used for target invocation. Use `execution_role` if `default_execution_role.enabled` is `false`. `default_execution_role` as defined below.
@@ -108,6 +115,9 @@ variable "event_bus_targets" {
     (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
       (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
       (Optional) `sqs_queue` - The Amazon Resource Name (ARN) of the SQS queue specified as the target for the dead letter queue.
+    (Optional) `retry_policy` - The configuration for retry policy of the rule target. Retry policies are used for specifying how many times to retry sending an event to a target after an error occurs. `retry_policy` as defined below.
+      (Optional) `maximum_event_age` - The maximum amount of time, in seconds, to continue to make retry attempts. Defaults to `86400` (1 hour).
+      (Optional) `maximum_retry_attempts` - The maximum number of times to retry sending an event to a target after an error occurs. Defaults to `185`.
   EOF
   type = list(object({
     id        = string
@@ -118,6 +128,10 @@ variable "event_bus_targets" {
     dead_letter_queue = optional(object({
       enabled   = optional(bool, false)
       sqs_queue = optional(string)
+    }), {})
+    retry_policy = optional(object({
+      maximum_event_age      = optional(number, 86400)
+      maximum_retry_attempts = optional(number, 185)
     }), {})
   }))
   default  = []
@@ -136,15 +150,18 @@ variable "event_bus_targets" {
   }
 }
 
-# TODO: Support EventBridge API Destination targets
 variable "api_destination_targets" {
   description = <<EOF
   (Optional) The configuration to manage the specified EventBridge API destination targets for the rule. Each item of `api_destination_targets` as defined below.
     (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
     (Required) `api_destination` - The Amazon Resource Name (ARN) of the target API destination.
+    (Optional) `http` - The configuration for the HTTP request sent to the API destination. `http` as defined below.
+      (Optional) `headers` - A map of HTTP headers to add to the request (`name` => `value`).
+      (Optional) `path_parameters` - A list of values to substitute for the path parameter wildcards (`*`) of the API destination endpoint, in order.
+      (Optional) `query_parameters` - A map of query string parameters to add to the request (`name` => `value`).
 
     (Optional) `input` - The input to send to the target. `input` as defined below.
-      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRNASFORMER`. Defaults to `MATCHED_EVENT`.
+      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRANSFORMER`. Defaults to `MATCHED_EVENT`.
       (Optional) `value` - The input value to send to the target. Not required if `input.type` is `MATCHED_EVENT`.
         `CONSTANT` - Valid JSON text passed to the target.
         `JSON_PATH` - A JSON path expression that selects a portion of the event data to pass to the target.
@@ -163,6 +180,11 @@ variable "api_destination_targets" {
   type = list(object({
     id              = string
     api_destination = string
+    http = optional(object({
+      headers          = optional(map(string), {})
+      path_parameters  = optional(list(string), [])
+      query_parameters = optional(map(string), {})
+    }), {})
 
     input = optional(object({
       type                = optional(string, "MATCHED_EVENT")
@@ -221,7 +243,7 @@ variable "aws_service_targets" {
       (Required) `target_selector` - The target selector as a Map of key-value pairs. Valid keys are `InstanceIds` or `tag:$${tag-name}`.
 
     (Optional) `input` - The input to send to the target. `input` as defined below.
-      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRNASFORMER`, `CHATBOT_CUSTOM_NOTIFICATION`. Defaults to `MATCHED_EVENT`.
+      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRANSFORMER`, `CHATBOT_CUSTOM_NOTIFICATION`. Defaults to `MATCHED_EVENT`.
       (Optional) `value` - The input value to send to the target. Not required if `input.type` is `MATCHED_EVENT`.
         `CONSTANT` - Valid JSON text passed to the target.
         `JSON_PATH` - A JSON path expression that selects a portion of the event data to pass to the target.
