@@ -3,6 +3,9 @@ locals {
     "CLOUDWATCH_LOG_GROUP" = {
       support_execution_role = false
     }
+    "ECS_TASK" = {
+      support_execution_role = true
+    }
     "FIREHOSE_DELIVERY_STREAM" = {
       support_execution_role = true
     }
@@ -37,6 +40,7 @@ locals {
     for target in var.aws_service_targets :
     target.id => {
       "CLOUDWATCH_LOG_GROUP"     = try(target.cloudwatch_log_group.arn, null)
+      "ECS_TASK"                 = try(target.ecs_task.cluster, null)
       "FIREHOSE_DELIVERY_STREAM" = try(target.firehose_delivery_stream.arn, null)
       "KINESIS_STREAM"           = try(target.kinesis_stream.arn, null)
       "LAMBDA_FUNCTION"          = try(target.lambda_function.arn, null)
@@ -171,7 +175,7 @@ resource "aws_cloudwatch_event_target" "api_destination" {
 # Rule Targets (AWS Services)
 ###################################################
 
-# TODO: Support `batch_target`, `ecs_target`, `http_target`, `redshift_target`, `sagemaker_pipeline_target`, `appsync_target`
+# TODO: Support `batch_target`, `http_target`, `redshift_target`, `sagemaker_pipeline_target`, `appsync_target`
 
 resource "aws_cloudwatch_event_target" "aws_service" {
   for_each = {
@@ -191,6 +195,62 @@ resource "aws_cloudwatch_event_target" "aws_service" {
   target_id = each.key
   arn       = local.aws_service_target_arns[each.key]
 
+  dynamic "ecs_target" {
+    for_each = each.value.type == "ECS_TASK" ? [each.value.ecs_task] : []
+    iterator = target
+
+    content {
+      task_definition_arn = target.value.task_definition
+      task_count          = target.value.task_count
+      launch_type         = target.value.launch_type
+      platform_version    = target.value.platform_version
+      group               = target.value.group
+
+      dynamic "network_configuration" {
+        for_each = target.value.network != null ? [target.value.network] : []
+        iterator = network
+
+        content {
+          subnets          = network.value.subnets
+          security_groups  = network.value.security_groups
+          assign_public_ip = network.value.public_ip_enabled
+        }
+      }
+      dynamic "capacity_provider_strategy" {
+        for_each = target.value.capacity_provider_strategies
+        iterator = strategy
+
+        content {
+          capacity_provider = strategy.value.capacity_provider
+          weight            = strategy.value.weight
+          base              = strategy.value.base
+        }
+      }
+      dynamic "placement_constraint" {
+        for_each = target.value.placement_constraints
+        iterator = constraint
+
+        content {
+          type       = constraint.value.type
+          expression = constraint.value.expression
+        }
+      }
+      dynamic "ordered_placement_strategy" {
+        for_each = target.value.placement_strategies
+        iterator = strategy
+
+        content {
+          type  = strategy.value.type
+          field = strategy.value.field
+        }
+      }
+
+      propagate_tags          = target.value.propagate_tags_enabled ? "TASK_DEFINITION" : null
+      enable_ecs_managed_tags = target.value.ecs_managed_tags_enabled
+      enable_execute_command  = target.value.execute_command_enabled
+      tags                    = target.value.tags
+    }
+  }
   dynamic "kinesis_target" {
     for_each = each.value.type == "KINESIS_STREAM" ? [each.value.kinesis_stream] : []
     iterator = target
