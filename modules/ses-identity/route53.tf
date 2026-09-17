@@ -35,6 +35,6 @@ resource "aws_route53_record" "dkim" {
   type    = "CNAME"
   records = ["${local.tokens[count.index]}.${local.dkim_domain}"]
 
-  ttl             = "600"
+  ttl             = 600
   allow_overwrite = true
 }

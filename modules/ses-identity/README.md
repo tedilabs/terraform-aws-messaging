@@ -70,6 +70,7 @@ This module creates following resources.
 | <a name="output_policies"></a> [policies](#output\_policies) | A set of authorization policy names for the SES identity. |
 | <a name="output_region"></a> [region](#output\_region) | The AWS region this module resources resides in. |
 | <a name="output_resource_group"></a> [resource\_group](#output\_resource\_group) | The resource group created to manage resources in this module. |
-| <a name="output_status"></a> [status](#output\_status) | The status of the SES identity. |
+| <a name="output_status"></a> [status](#output\_status) | The status of the SES identity. `VERIFIED` if the identity is verified for sending, `PENDING` otherwise. |
 | <a name="output_type"></a> [type](#output\_type) | The type of the SES identity. |
+| <a name="output_verification_status"></a> [verification\_status](#output\_verification\_status) | The verification status of the SES identity. Valid values are `PENDING`, `SUCCESS`, `FAILED`, `TEMPORARY_FAILURE`, `NOT_STARTED`. |
 <!-- END_TF_DOCS -->
