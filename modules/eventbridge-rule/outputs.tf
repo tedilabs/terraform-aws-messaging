@@ -39,7 +39,7 @@ output "execution_role" {
 }
 
 output "trigger" {
-  description = "The configuration for the rule trriger."
+  description = "The configuration for the rule trigger."
   value = {
     event_pattern       = aws_cloudwatch_event_rule.this.event_pattern
     schedule_expression = aws_cloudwatch_event_rule.this.schedule_expression
@@ -47,6 +47,12 @@ output "trigger" {
 }
 
 locals {
+  output_event_bus_targets = {
+    for target in var.event_bus_targets :
+    target.id => merge(target, {
+      instance = aws_cloudwatch_event_target.event_bus[target.id]
+    })
+  }
   output_api_destination_targets = {
     for target in var.api_destination_targets :
     target.id => merge(target, {
@@ -64,24 +70,24 @@ locals {
 output "event_bus_targets" {
   description = "The configuration for EventBridge event bus targets of the rule."
   value = {
-    for id, target in aws_cloudwatch_event_target.event_bus :
+    for id, target in local.output_event_bus_targets :
     id => {
-      id             = target.target_id
-      event_bus      = target.arn
-      execution_role = target.role_arn
+      id             = target.id
+      event_bus      = target.instance.arn
+      execution_role = target.instance.role_arn
 
       dead_letter_queue = {
-        enabled = one(target.dead_letter_config) != null
-        sqs_queue = (one(target.dead_letter_config) != null
-          ? one(target.dead_letter_config).arn
+        enabled = one(target.instance.dead_letter_config) != null
+        sqs_queue = (one(target.instance.dead_letter_config) != null
+          ? one(target.instance.dead_letter_config).arn
           : null
         )
       }
+      retry_policy = target.retry_policy
     }
   }
 }
 
-# TODO: Support EventBridge API Destination targets
 output "api_destination_targets" {
   description = "The configuration for EventBridge API destination targets of the rule."
   value = {
@@ -89,6 +95,7 @@ output "api_destination_targets" {
     id => {
       id              = target.id
       api_destination = target.instance.arn
+      http            = target.http
       execution_role  = target.instance.role_arn
 
       input = target.input
