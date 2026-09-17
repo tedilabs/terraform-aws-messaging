@@ -1,3 +1,8 @@
+output "region" {
+  description = "The AWS region this module resources resides in."
+  value       = local.event_bus.region
+}
+
 output "id" {
   description = "The unique identifier for the event bus."
   value       = local.event_bus.id

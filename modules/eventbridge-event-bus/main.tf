@@ -30,11 +30,15 @@ locals {
 data "aws_cloudwatch_event_bus" "default" {
   count = local.is_default ? 1 : 0
 
+  region = var.region
+
   name = "default"
 }
 
 resource "aws_cloudwatch_event_bus" "this" {
   count = local.is_default ? 0 : 1
+
+  region = var.region
 
   name              = var.name
   event_source_name = startswith(var.name, "aws.partner/") ? var.name : null
@@ -56,6 +60,8 @@ resource "aws_cloudwatch_event_bus" "this" {
 resource "aws_cloudwatch_event_bus_policy" "this" {
   count = var.policy != null ? 1 : 0
 
+  region = var.region
+
   event_bus_name = local.event_bus.name
   policy         = var.policy
 }
@@ -70,6 +76,8 @@ resource "aws_cloudwatch_event_archive" "this" {
     for archive in var.archives :
     archive.name => archive
   }
+
+  region = var.region
 
   event_source_arn = local.event_bus.arn
 
@@ -87,6 +95,8 @@ resource "aws_cloudwatch_event_archive" "this" {
 
 resource "aws_schemas_discoverer" "this" {
   count = var.schema_discovery.enabled ? 1 : 0
+
+  region = var.region
 
   source_arn  = local.event_bus.arn
   description = var.schema_discovery.description
