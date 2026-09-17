@@ -23,6 +23,8 @@ locals {
 # - `is_enabled`
 # - `name_prefix`
 resource "aws_cloudwatch_event_rule" "this" {
+  region = var.region
+
   event_bus_name = var.event_bus
 
   name        = var.name

@@ -1,3 +1,8 @@
+output "region" {
+  description = "The AWS region this module resources resides in."
+  value       = aws_cloudwatch_event_rule.this.region
+}
+
 output "id" {
   description = "The unique identifier for the rule."
   value       = aws_cloudwatch_event_rule.this.id

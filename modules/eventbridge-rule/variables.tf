@@ -1,3 +1,10 @@
+variable "region" {
+  description = "(Optional) The region in which to create the module resources. If not provided, the module resources will be created in the provider's configured region."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
 variable "event_bus" {
   description = "(Optional) The name or ARN of the event bus to associate with this rule. If you omit this, the `default` event bus is used."
   type        = string
