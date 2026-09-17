@@ -14,6 +14,21 @@ locals {
   } : {}
 }
 
+locals {
+  throughput_scopes = {
+    "TOPIC"         = "Topic"
+    "MESSAGE_GROUP" = "MessageGroup"
+  }
+  delivery_status_logging = {
+    for type, config in var.delivery_status_logging :
+    type => {
+      success_feedback_role        = config.enabled ? config.success_feedback_role : null
+      success_feedback_sample_rate = config.enabled ? config.success_feedback_sample_rate : null
+      failure_feedback_role        = config.enabled ? config.failure_feedback_role : null
+    }
+  }
+}
+
 
 ###################################################
 # SNS Topic
@@ -30,6 +45,14 @@ resource "aws_sns_topic" "this" {
   fifo_topic   = true
 
   content_based_deduplication = var.content_based_deduplication
+  fifo_throughput_scope       = local.throughput_scopes[var.throughput_scope]
+
+  archive_policy = (var.message_archiving.enabled
+    ? jsonencode({
+      "MessageRetentionPeriod" = tostring(var.message_archiving.retention_in_days)
+    })
+    : null
+  )
 
 
   ## Observability
@@ -46,25 +69,27 @@ resource "aws_sns_topic" "this" {
     : null
   )
 
-  # application_success_feedback_role_arn - (Optional) The IAM role permitted to receive success feedback for this topic
-  # application_success_feedback_sample_rate - (Optional) Percentage of success to sample
-  # application_failure_feedback_role_arn - (Optional) IAM role for failure feedback
+  ## Delivery Status Logging
+  application_success_feedback_role_arn    = local.delivery_status_logging.application.success_feedback_role
+  application_success_feedback_sample_rate = local.delivery_status_logging.application.success_feedback_sample_rate
+  application_failure_feedback_role_arn    = local.delivery_status_logging.application.failure_feedback_role
 
-  # http_success_feedback_role_arn - (Optional) The IAM role permitted to receive success feedback for this topic
-  # http_success_feedback_sample_rate - (Optional) Percentage of success to sample
-  # http_failure_feedback_role_arn - (Optional) IAM role for failure feedback
+  firehose_success_feedback_role_arn    = local.delivery_status_logging.firehose.success_feedback_role
+  firehose_success_feedback_sample_rate = local.delivery_status_logging.firehose.success_feedback_sample_rate
+  firehose_failure_feedback_role_arn    = local.delivery_status_logging.firehose.failure_feedback_role
 
-  # lambda_success_feedback_role_arn - (Optional) The IAM role permitted to receive success feedback for this topic
-  # lambda_success_feedback_sample_rate - (Optional) Percentage of success to sample
-  # lambda_failure_feedback_role_arn - (Optional) IAM role for failure feedback
+  http_success_feedback_role_arn    = local.delivery_status_logging.http.success_feedback_role
+  http_success_feedback_sample_rate = local.delivery_status_logging.http.success_feedback_sample_rate
+  http_failure_feedback_role_arn    = local.delivery_status_logging.http.failure_feedback_role
 
-  # sqs_success_feedback_role_arn - (Optional) The IAM role permitted to receive success feedback for this topic
-  # sqs_success_feedback_sample_rate - (Optional) Percentage of success to sample
-  # sqs_failure_feedback_role_arn - (Optional) IAM role for failure feedback
+  lambda_success_feedback_role_arn    = local.delivery_status_logging.lambda.success_feedback_role
+  lambda_success_feedback_sample_rate = local.delivery_status_logging.lambda.success_feedback_sample_rate
+  lambda_failure_feedback_role_arn    = local.delivery_status_logging.lambda.failure_feedback_role
 
-  # firehose_success_feedback_role_arn - (Optional) The IAM role permitted to receive success feedback for this topic
-  # firehose_success_feedback_sample_rate - (Optional) Percentage of success to sample
-  # firehose_failure_feedback_role_arn
+  sqs_success_feedback_role_arn    = local.delivery_status_logging.sqs.success_feedback_role
+  sqs_success_feedback_sample_rate = local.delivery_status_logging.sqs.success_feedback_sample_rate
+  sqs_failure_feedback_role_arn    = local.delivery_status_logging.sqs.failure_feedback_role
+
 
   tags = merge(
     {
