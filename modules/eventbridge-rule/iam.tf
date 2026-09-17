@@ -53,6 +53,12 @@ module "role" {
       }
       : {}
     ),
+    (one(data.aws_iam_policy_document.batch_jobs) != null
+      ? {
+        "batch-job-targets" = one(data.aws_iam_policy_document.batch_jobs).json
+      }
+      : {}
+    ),
     (one(data.aws_iam_policy_document.ecs_tasks) != null
       ? {
         "ecs-task-targets" = one(data.aws_iam_policy_document.ecs_tasks).json
@@ -176,6 +182,35 @@ data "aws_iam_policy_document" "ssm_run_command" {
   }
 }
 
+
+locals {
+  batch_job_definition_arns = distinct([
+    for target in local.aws_service_targets_by_type["BATCH_JOB"] :
+    (strcontains(target.batch_job.job_definition, ":job-definition/")
+      ? target.batch_job.job_definition
+      : "arn:${local.partition}:batch:${local.region}:${local.account_id}:job-definition/${target.batch_job.job_definition}"
+    )
+  ])
+}
+
+data "aws_iam_policy_document" "batch_jobs" {
+  count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["BATCH_JOB"]) > 0) ? 1 : 0
+
+  statement {
+    sid = "AllowBatchJobTargets"
+
+    effect  = "Allow"
+    actions = ["batch:SubmitJob"]
+    resources = distinct(concat(
+      local.aws_service_targets_by_type["BATCH_JOB"][*].batch_job.job_queue,
+      local.batch_job_definition_arns,
+      [
+        for arn in local.batch_job_definition_arns :
+        "${replace(arn, "/:[0-9]+$/", "")}:*"
+      ],
+    ))
+  }
+}
 
 data "aws_iam_policy_document" "ecs_tasks" {
   count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["ECS_TASK"]) > 0) ? 1 : 0

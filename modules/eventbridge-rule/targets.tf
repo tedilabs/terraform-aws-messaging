@@ -1,5 +1,8 @@
 locals {
   aws_service_types = {
+    "BATCH_JOB" = {
+      support_execution_role = true
+    }
     "CLOUDWATCH_LOG_GROUP" = {
       support_execution_role = false
     }
@@ -39,6 +42,7 @@ locals {
   aws_service_target_arns = {
     for target in var.aws_service_targets :
     target.id => {
+      "BATCH_JOB"                = try(target.batch_job.job_queue, null)
       "CLOUDWATCH_LOG_GROUP"     = try(target.cloudwatch_log_group.arn, null)
       "ECS_TASK"                 = try(target.ecs_task.cluster, null)
       "FIREHOSE_DELIVERY_STREAM" = try(target.firehose_delivery_stream.arn, null)
@@ -175,7 +179,7 @@ resource "aws_cloudwatch_event_target" "api_destination" {
 # Rule Targets (AWS Services)
 ###################################################
 
-# TODO: Support `batch_target`, `http_target`, `redshift_target`, `sagemaker_pipeline_target`, `appsync_target`
+# TODO: Support `http_target`, `redshift_target`, `sagemaker_pipeline_target`, `appsync_target`
 
 resource "aws_cloudwatch_event_target" "aws_service" {
   for_each = {
@@ -195,6 +199,17 @@ resource "aws_cloudwatch_event_target" "aws_service" {
   target_id = each.key
   arn       = local.aws_service_target_arns[each.key]
 
+  dynamic "batch_target" {
+    for_each = each.value.type == "BATCH_JOB" ? [each.value.batch_job] : []
+    iterator = target
+
+    content {
+      job_definition = target.value.job_definition
+      job_name       = target.value.job_name
+      array_size     = target.value.array_size
+      job_attempts   = target.value.job_attempts
+    }
+  }
   dynamic "ecs_target" {
     for_each = each.value.type == "ECS_TASK" ? [each.value.ecs_task] : []
     iterator = target
