@@ -31,6 +31,8 @@ resource "aws_cloudwatch_event_target" "event_bus" {
   event_bus_name = var.event_bus
   rule           = aws_cloudwatch_event_rule.this.name
 
+  force_destroy = var.force_destroy
+
   target_id = each.key
   arn       = each.value.event_bus
 
@@ -51,6 +53,10 @@ resource "aws_cloudwatch_event_target" "event_bus" {
       arn = config.value.sqs_queue
     }
   }
+  retry_policy {
+    maximum_event_age_in_seconds = each.value.retry_policy.maximum_event_age
+    maximum_retry_attempts       = each.value.retry_policy.maximum_retry_attempts
+  }
 }
 
 
@@ -58,7 +64,6 @@ resource "aws_cloudwatch_event_target" "event_bus" {
 # Rule Targets (API Destination)
 ###################################################
 
-# TODO: Support EventBridge API Destination targets
 resource "aws_cloudwatch_event_target" "api_destination" {
   for_each = {
     for target in var.api_destination_targets :
@@ -70,8 +75,40 @@ resource "aws_cloudwatch_event_target" "api_destination" {
   event_bus_name = var.event_bus
   rule           = aws_cloudwatch_event_rule.this.name
 
+  force_destroy = var.force_destroy
+
   target_id = each.key
   arn       = each.value.api_destination
+
+  dynamic "http_target" {
+    for_each = anytrue([
+      length(each.value.http.headers) > 0,
+      length(each.value.http.path_parameters) > 0,
+      length(each.value.http.query_parameters) > 0,
+    ]) ? [each.value.http] : []
+    iterator = http
+
+    content {
+      header_parameters       = http.value.headers
+      path_parameter_values   = http.value.path_parameters
+      query_string_parameters = http.value.query_parameters
+    }
+  }
+
+
+  ## Target Input
+  input      = each.value.input.type == "CONSTANT" ? each.value.input.value : null
+  input_path = each.value.input.type == "JSON_PATH" ? each.value.input.value : null
+
+  dynamic "input_transformer" {
+    for_each = each.value.input.type == "TRANSFORMER" ? [each.value.input] : []
+    iterator = input
+
+    content {
+      input_paths    = input.value.reference_variables
+      input_template = input.value.value
+    }
+  }
 
 
   ## Permissions
@@ -118,6 +155,8 @@ resource "aws_cloudwatch_event_target" "aws_service" {
 
   event_bus_name = var.event_bus
   rule           = aws_cloudwatch_event_rule.this.name
+
+  force_destroy = var.force_destroy
 
 
   ## Target

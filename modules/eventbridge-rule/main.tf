@@ -31,6 +31,8 @@ resource "aws_cloudwatch_event_rule" "this" {
   description = var.description
   state       = var.state
 
+  force_destroy = var.force_destroy
+
 
   ## Permissions
   role_arn = (var.default_execution_role.enabled
