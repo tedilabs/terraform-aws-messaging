@@ -1,5 +1,11 @@
 locals {
   aws_service_types = {
+    "API_GATEWAY_ENDPOINT" = {
+      support_execution_role = true
+    }
+    "APPSYNC_GRAPHQL_API" = {
+      support_execution_role = true
+    }
     "BATCH_JOB" = {
       support_execution_role = true
     }
@@ -48,6 +54,8 @@ locals {
   aws_service_target_arns = {
     for target in var.aws_service_targets :
     target.id => {
+      "API_GATEWAY_ENDPOINT"     = try(target.api_gateway_endpoint.arn, null)
+      "APPSYNC_GRAPHQL_API"      = try(target.appsync_graphql_api.arn, null)
       "BATCH_JOB"                = try(target.batch_job.job_queue, null)
       "CLOUDWATCH_LOG_GROUP"     = try(target.cloudwatch_log_group.arn, null)
       "ECS_TASK"                 = try(target.ecs_task.cluster, null)
@@ -187,7 +195,6 @@ resource "aws_cloudwatch_event_target" "api_destination" {
 # Rule Targets (AWS Services)
 ###################################################
 
-# TODO: Support `http_target`, `appsync_target`
 
 resource "aws_cloudwatch_event_target" "aws_service" {
   for_each = {
@@ -207,6 +214,28 @@ resource "aws_cloudwatch_event_target" "aws_service" {
   target_id = each.key
   arn       = local.aws_service_target_arns[each.key]
 
+  dynamic "http_target" {
+    for_each = (each.value.type == "API_GATEWAY_ENDPOINT" && anytrue([
+      length(each.value.api_gateway_endpoint.http.headers) > 0,
+      length(each.value.api_gateway_endpoint.http.path_parameters) > 0,
+      length(each.value.api_gateway_endpoint.http.query_parameters) > 0,
+    ])) ? [each.value.api_gateway_endpoint.http] : []
+    iterator = http
+
+    content {
+      header_parameters       = http.value.headers
+      path_parameter_values   = http.value.path_parameters
+      query_string_parameters = http.value.query_parameters
+    }
+  }
+  dynamic "appsync_target" {
+    for_each = each.value.type == "APPSYNC_GRAPHQL_API" ? [each.value.appsync_graphql_api] : []
+    iterator = target
+
+    content {
+      graphql_operation = target.value.graphql_operation
+    }
+  }
   dynamic "batch_target" {
     for_each = each.value.type == "BATCH_JOB" ? [each.value.batch_job] : []
     iterator = target
