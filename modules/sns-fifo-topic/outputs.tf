@@ -38,6 +38,31 @@ output "content_based_deduplication" {
   value       = aws_sns_topic.this.content_based_deduplication
 }
 
+output "throughput_scope" {
+  description = "The throughput scope of the FIFO topic."
+  value = {
+    for k, v in local.throughput_scopes :
+    v => k
+  }[aws_sns_topic.this.fifo_throughput_scope]
+}
+
+output "message_archiving" {
+  description = <<EOF
+  The configuration for message archiving of the FIFO topic.
+    `enabled` - Whether message archiving is enabled.
+    `retention_in_days` - The number of days to retain messages in the archive.
+    `beginning_archive_time` - The oldest timestamp at which a FIFO topic subscriber can start a replay.
+  EOF
+  value = {
+    enabled = var.message_archiving.enabled
+    retention_in_days = (var.message_archiving.enabled
+      ? tonumber(jsondecode(aws_sns_topic.this.archive_policy)["MessageRetentionPeriod"])
+      : null
+    )
+    beginning_archive_time = aws_sns_topic.this.beginning_archive_time
+  }
+}
+
 output "xray_tracing_enabled" {
   description = "Whether to activate AWS X-Ray Active Tracing mode for the SNS topic."
   value       = aws_sns_topic.this.tracing_config == "Active"
@@ -56,21 +81,34 @@ output "encryption_at_rest" {
   }
 }
 
-output "z" {
-  description = "The list of log streams for the log group."
+output "delivery_status_logging" {
+  description = "The configuration for the delivery status logging of the SNS topic, keyed by endpoint type."
   value = {
-    for k, v in aws_sns_topic.this :
-    k => v
-    if !contains(["id", "arn", "name", "name_prefix", "display_name", "owner", "tags", "tags_all", "signature_version", "kms_master_key_id", "tracing_config", "content_based_deduplication", "fifo_topic"], k)
+    for type, config in var.delivery_status_logging :
+    type => {
+      enabled                      = config.enabled
+      success_feedback_role        = aws_sns_topic.this["${type}_success_feedback_role_arn"]
+      success_feedback_sample_rate = aws_sns_topic.this["${type}_success_feedback_sample_rate"]
+      failure_feedback_role        = aws_sns_topic.this["${type}_failure_feedback_role_arn"]
+    }
   }
 }
 
-output "zz" {
-  description = "The list of log streams for the log group."
-  value = {
-    policy = aws_sns_topic_policy.this
-  }
-}
+# output "z" {
+#   description = "The list of log streams for the log group."
+#   value = {
+#     for k, v in aws_sns_topic.this :
+#     k => v
+#     if !contains(["id", "arn", "name", "name_prefix", "display_name", "owner", "tags", "tags_all", "signature_version", "kms_master_key_id", "tracing_config", "content_based_deduplication", "fifo_topic"], k)
+#   }
+# }
+
+# output "zz" {
+#   description = "The list of log streams for the log group."
+#   value = {
+#     policy = aws_sns_topic_policy.this
+#   }
+# }
 
 output "resource_group" {
   description = "The resource group created to manage resources in this module."
