@@ -1,3 +1,8 @@
+output "region" {
+  description = "The AWS region this module resources resides in."
+  value       = aws_msk_cluster.this.region
+}
+
 output "arn" {
   description = "The ARN of the MSK cluster."
   value       = aws_msk_cluster.this.arn

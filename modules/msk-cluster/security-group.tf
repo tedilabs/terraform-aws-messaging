@@ -1,4 +1,6 @@
 data "aws_subnet" "this" {
+  region = var.region
+
   id = var.broker_subnets[0]
 }
 
@@ -14,6 +16,8 @@ locals {
 module "security_group" {
   source  = "tedilabs/network/aws//modules/security-group"
   version = "~> 1.2.0"
+
+  region = var.region
 
   name        = "msk-${var.name}"
   description = "Security group for MSK Cluster."

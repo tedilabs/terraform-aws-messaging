@@ -23,6 +23,8 @@ module "secret" {
 
   for_each = var.authentication.sasl_scram.users
 
+  region = var.region
+
   name        = "AmazonMSK_SCRAM/${var.name}/${each.key}"
   description = "The SASL/SCRAM secret to provide username and password for MSK cluster authenticaiton."
 
@@ -51,6 +53,8 @@ module "secret" {
 
 resource "aws_msk_scram_secret_association" "this" {
   count = length(module.secret) > 0 ? 1 : 0
+
+  region = var.region
 
   cluster_arn     = aws_msk_cluster.this.arn
   secret_arn_list = values(module.secret)[*].arn

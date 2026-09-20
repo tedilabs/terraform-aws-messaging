@@ -28,6 +28,8 @@ EOT
 }
 
 resource "aws_msk_configuration" "this" {
+  region = var.region
+
   name           = var.name
   description    = "Configuration for ${var.name} Kafka Cluster."
   kafka_versions = [var.kafka_version]
@@ -45,6 +47,8 @@ resource "aws_msk_configuration" "this" {
 ###################################################
 
 resource "aws_msk_cluster" "this" {
+  region = var.region
+
   cluster_name           = var.name
   kafka_version          = var.kafka_version
   number_of_broker_nodes = var.broker_size
@@ -166,5 +170,7 @@ resource "aws_msk_cluster" "this" {
 }
 
 data "aws_msk_broker_nodes" "this" {
+  region = var.region
+
   cluster_arn = aws_msk_cluster.this.arn
 }
