@@ -26,6 +26,8 @@ resource "aws_cloudwatch_event_target" "event_bus" {
     target.id => target
   }
 
+  region = var.region
+
   event_bus_name = var.event_bus
   rule           = aws_cloudwatch_event_rule.this.name
 
@@ -62,6 +64,8 @@ resource "aws_cloudwatch_event_target" "api_destination" {
     for target in var.api_destination_targets :
     target.id => target
   }
+
+  region = var.region
 
   event_bus_name = var.event_bus
   rule           = aws_cloudwatch_event_rule.this.name
@@ -109,6 +113,8 @@ resource "aws_cloudwatch_event_target" "aws_service" {
     for target in var.aws_service_targets :
     target.id => target
   }
+
+  region = var.region
 
   event_bus_name = var.event_bus
   rule           = aws_cloudwatch_event_rule.this.name
