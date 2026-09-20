@@ -18,6 +18,12 @@ locals {
     "LAMBDA_FUNCTION" = {
       support_execution_role = false
     }
+    "REDSHIFT_CLUSTER" = {
+      support_execution_role = true
+    }
+    "SAGEMAKER_PIPELINE" = {
+      support_execution_role = true
+    }
     "SFN_STATE_MACHINE" = {
       support_execution_role = true
     }
@@ -48,6 +54,8 @@ locals {
       "FIREHOSE_DELIVERY_STREAM" = try(target.firehose_delivery_stream.arn, null)
       "KINESIS_STREAM"           = try(target.kinesis_stream.arn, null)
       "LAMBDA_FUNCTION"          = try(target.lambda_function.arn, null)
+      "REDSHIFT_CLUSTER"         = try(target.redshift_cluster.arn, null)
+      "SAGEMAKER_PIPELINE"       = try(target.sagemaker_pipeline.arn, null)
       "SFN_STATE_MACHINE"        = try(target.sfn_state_machine.arn, null)
       "SNS_TOPIC"                = try(target.sns_topic.arn, null)
       "SQS_QUEUE"                = try(target.sqs_queue.arn, null)
@@ -179,7 +187,7 @@ resource "aws_cloudwatch_event_target" "api_destination" {
 # Rule Targets (AWS Services)
 ###################################################
 
-# TODO: Support `http_target`, `redshift_target`, `sagemaker_pipeline_target`, `appsync_target`
+# TODO: Support `http_target`, `appsync_target`
 
 resource "aws_cloudwatch_event_target" "aws_service" {
   for_each = {
@@ -272,6 +280,35 @@ resource "aws_cloudwatch_event_target" "aws_service" {
 
     content {
       partition_key_path = target.value.partition_key_path
+    }
+  }
+  dynamic "redshift_target" {
+    for_each = each.value.type == "REDSHIFT_CLUSTER" ? [each.value.redshift_cluster] : []
+    iterator = target
+
+    content {
+      database            = target.value.database
+      db_user             = target.value.db_user
+      secrets_manager_arn = target.value.secret
+      sql                 = target.value.sql
+      statement_name      = target.value.statement_name
+      with_event          = target.value.with_event_enabled
+    }
+  }
+  dynamic "sagemaker_pipeline_target" {
+    for_each = each.value.type == "SAGEMAKER_PIPELINE" ? [each.value.sagemaker_pipeline] : []
+    iterator = target
+
+    content {
+      dynamic "pipeline_parameter_list" {
+        for_each = target.value.parameters
+        iterator = parameter
+
+        content {
+          name  = parameter.key
+          value = parameter.value
+        }
+      }
     }
   }
   dynamic "sqs_target" {

@@ -77,6 +77,18 @@ module "role" {
       }
       : {}
     ),
+    (one(data.aws_iam_policy_document.redshift_clusters) != null
+      ? {
+        "redshift-cluster-targets" = one(data.aws_iam_policy_document.redshift_clusters).json
+      }
+      : {}
+    ),
+    (one(data.aws_iam_policy_document.sagemaker_pipelines) != null
+      ? {
+        "sagemaker-pipeline-targets" = one(data.aws_iam_policy_document.sagemaker_pipelines).json
+      }
+      : {}
+    ),
     (one(data.aws_iam_policy_document.sfn_state_machines) != null
       ? {
         "sfn-state-machine-targets" = one(data.aws_iam_policy_document.sfn_state_machines).json
@@ -288,6 +300,75 @@ data "aws_iam_policy_document" "kinesis_streams" {
       "kinesis:PutRecords",
     ]
     resources = local.aws_service_targets_by_type["KINESIS_STREAM"][*].kinesis_stream.arn
+  }
+}
+
+locals {
+  redshift_cluster_targets_with_db_user = [
+    for target in local.aws_service_targets_by_type["REDSHIFT_CLUSTER"] :
+    target
+    if target.redshift_cluster.db_user != null
+  ]
+  redshift_cluster_targets_with_secret = [
+    for target in local.aws_service_targets_by_type["REDSHIFT_CLUSTER"] :
+    target
+    if target.redshift_cluster.secret != null
+  ]
+}
+
+data "aws_iam_policy_document" "redshift_clusters" {
+  count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["REDSHIFT_CLUSTER"]) > 0) ? 1 : 0
+
+  statement {
+    sid = "AllowRedshiftClusterTargets"
+
+    effect = "Allow"
+    actions = [
+      "redshift-data:ExecuteStatement",
+      "redshift-data:BatchExecuteStatement",
+    ]
+    resources = distinct(local.aws_service_targets_by_type["REDSHIFT_CLUSTER"][*].redshift_cluster.arn)
+  }
+
+  dynamic "statement" {
+    for_each = length(local.redshift_cluster_targets_with_db_user) > 0 ? ["go"] : []
+
+    content {
+      sid = "AllowRedshiftClusterCredentials"
+
+      effect  = "Allow"
+      actions = ["redshift:GetClusterCredentials"]
+      resources = distinct(flatten([
+        for target in local.redshift_cluster_targets_with_db_user : [
+          "arn:${local.partition}:redshift:${local.region}:${local.account_id}:dbuser:${regex(":cluster:(.+)$", target.redshift_cluster.arn)[0]}/${target.redshift_cluster.db_user}",
+          "arn:${local.partition}:redshift:${local.region}:${local.account_id}:dbname:${regex(":cluster:(.+)$", target.redshift_cluster.arn)[0]}/${target.redshift_cluster.database}",
+        ]
+      ]))
+    }
+  }
+
+  dynamic "statement" {
+    for_each = length(local.redshift_cluster_targets_with_secret) > 0 ? ["go"] : []
+
+    content {
+      sid = "AllowRedshiftClusterSecrets"
+
+      effect    = "Allow"
+      actions   = ["secretsmanager:GetSecretValue"]
+      resources = distinct(local.redshift_cluster_targets_with_secret[*].redshift_cluster.secret)
+    }
+  }
+}
+
+data "aws_iam_policy_document" "sagemaker_pipelines" {
+  count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["SAGEMAKER_PIPELINE"]) > 0) ? 1 : 0
+
+  statement {
+    sid = "AllowSagemakerPipelineTargets"
+
+    effect    = "Allow"
+    actions   = ["sagemaker:StartPipelineExecution"]
+    resources = distinct(local.aws_service_targets_by_type["SAGEMAKER_PIPELINE"][*].sagemaker_pipeline.arn)
   }
 }
 
