@@ -53,6 +53,18 @@ module "role" {
       }
       : {}
     ),
+    (one(data.aws_iam_policy_document.api_gateway_endpoints) != null
+      ? {
+        "api-gateway-endpoint-targets" = one(data.aws_iam_policy_document.api_gateway_endpoints).json
+      }
+      : {}
+    ),
+    (one(data.aws_iam_policy_document.appsync_graphql_apis) != null
+      ? {
+        "appsync-graphql-api-targets" = one(data.aws_iam_policy_document.appsync_graphql_apis).json
+      }
+      : {}
+    ),
     (one(data.aws_iam_policy_document.batch_jobs) != null
       ? {
         "batch-job-targets" = one(data.aws_iam_policy_document.batch_jobs).json
@@ -194,6 +206,33 @@ data "aws_iam_policy_document" "ssm_run_command" {
   }
 }
 
+
+data "aws_iam_policy_document" "api_gateway_endpoints" {
+  count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["API_GATEWAY_ENDPOINT"]) > 0) ? 1 : 0
+
+  statement {
+    sid = "AllowApiGatewayEndpointTargets"
+
+    effect    = "Allow"
+    actions   = ["execute-api:Invoke"]
+    resources = distinct(local.aws_service_targets_by_type["API_GATEWAY_ENDPOINT"][*].api_gateway_endpoint.arn)
+  }
+}
+
+data "aws_iam_policy_document" "appsync_graphql_apis" {
+  count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["APPSYNC_GRAPHQL_API"]) > 0) ? 1 : 0
+
+  statement {
+    sid = "AllowAppsyncGraphqlApiTargets"
+
+    effect  = "Allow"
+    actions = ["appsync:GraphQL"]
+    resources = distinct([
+      for target in local.aws_service_targets_by_type["APPSYNC_GRAPHQL_API"] :
+      "arn:${local.partition}:appsync:${local.region}:${local.account_id}:apis/${regex(":endpoints/graphql-api/([^/]+)$", target.appsync_graphql_api.arn)[0]}/*"
+    ])
+  }
+}
 
 locals {
   batch_job_definition_arns = distinct([
