@@ -18,7 +18,9 @@ locals {
   dkim_domain = lookup(local.dkim_domains, data.aws_region.current.region, local.dkim_domains["default"])
 }
 
-data "aws_region" "current" {}
+data "aws_region" "current" {
+  region = var.region
+}
 
 
 ###################################################
