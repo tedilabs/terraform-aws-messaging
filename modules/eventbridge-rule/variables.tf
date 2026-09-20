@@ -230,7 +230,13 @@ variable "aws_service_targets" {
   description = <<EOF
   (Optional) The configuration to manage the specified AWS service targets for the rule. Targets are the resources that are invoked when a rule is triggered. Each item of `aws_service_targets` as defined below.
     (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
-    (Required) `type` - The AWS resource type of the target. Valid values are `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
+    (Required) `type` - The AWS resource type of the target. Valid values are `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
+    (Optional) `batch_job` - The configuration for Batch job target. `batch_job` as defined below.
+      (Required) `job_queue` - The Amazon Resource Name (ARN) of the Batch job queue to submit the job to.
+      (Required) `job_definition` - The Amazon Resource Name (ARN) or the name of the Batch job definition to use. If the revision is omitted, the latest active revision is used.
+      (Required) `job_name` - The name of the submitted job.
+      (Optional) `array_size` - The size of the array, if the job is an array job. Valid value is between `2` and `10000`.
+      (Optional) `job_attempts` - The number of times to attempt to retry the job if it fails. Valid value is between `1` and `10`.
     (Optional) `cloudwatch_log_group` - The configuration for CloudWatch log group target. `cloudwatch_log_group` as defined below.
       (Required) `arn` - The Amazon Resource Name (ARN) of the CloudWatch log group.
     (Optional) `ecs_task` - The configuration for ECS task target. `ecs_task` as defined below.
@@ -285,7 +291,7 @@ variable "aws_service_targets" {
         `CHATBOT_CUSTOM_NOTIFICATION` - The extended version of `TRANSFORMER` input type.
       (Optional) `reference_variables` - A map of key-value pairs specified in the form of JSONPath (for example, `time = $.time`). Define variables that use JSON path to reference values in the original event source. Can define up to 100 variables. Only required if `input.type` is `TRANSFORMER` or `CHATBOT_CUSTOM_NOTIFICATION`.
 
-    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`. Only used by the target types which are invoked with an IAM role (`ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `SFN_STATE_MACHINE`, `SSM_RUN_COMMAND`); the other target types are invoked through the resource-based policies of the targets.
+    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`. Only used by the target types which are invoked with an IAM role (`BATCH_JOB`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `SFN_STATE_MACHINE`, `SSM_RUN_COMMAND`); the other target types are invoked through the resource-based policies of the targets.
 
     (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
       (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
@@ -297,6 +303,13 @@ variable "aws_service_targets" {
   type = list(object({
     id   = string
     type = string
+    batch_job = optional(object({
+      job_queue      = string
+      job_definition = string
+      job_name       = string
+      array_size     = optional(number)
+      job_attempts   = optional(number)
+    }))
     cloudwatch_log_group = optional(object({
       arn = string
     }))
@@ -382,14 +395,15 @@ variable "aws_service_targets" {
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
-      contains(["CLOUDWATCH_LOG_GROUP", "ECS_TASK", "FIREHOSE_DELIVERY_STREAM", "KINESIS_STREAM", "LAMBDA_FUNCTION", "SFN_STATE_MACHINE", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
+      contains(["BATCH_JOB", "CLOUDWATCH_LOG_GROUP", "ECS_TASK", "FIREHOSE_DELIVERY_STREAM", "KINESIS_STREAM", "LAMBDA_FUNCTION", "SFN_STATE_MACHINE", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
     ])
-    error_message = "Valid values for `type` are `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
+    error_message = "Valid values for `type` are `BATCH_JOB`, `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
   }
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
       anytrue([
+        target.type == "BATCH_JOB" ? strcontains(target.batch_job.job_queue, ":job-queue/") : false,
         target.type == "CLOUDWATCH_LOG_GROUP" ? strcontains(target.cloudwatch_log_group.arn, ":log-group:") : false,
         target.type == "ECS_TASK" ? strcontains(target.ecs_task.cluster, ":cluster/") && strcontains(target.ecs_task.task_definition, ":task-definition/") : false,
         target.type == "FIREHOSE_DELIVERY_STREAM" ? strcontains(target.firehose_delivery_stream.arn, ":deliverystream/") : false,
@@ -402,6 +416,17 @@ variable "aws_service_targets" {
       ])
     ])
     error_message = "Valid ARN (Amazon Resource Name) for the target AWS resource is required depending on the value of `type`."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.aws_service_targets :
+      alltrue([
+        target.batch_job.array_size == null || (coalesce(target.batch_job.array_size, 2) >= 2 && coalesce(target.batch_job.array_size, 2) <= 10000),
+        target.batch_job.job_attempts == null || (coalesce(target.batch_job.job_attempts, 1) >= 1 && coalesce(target.batch_job.job_attempts, 1) <= 10),
+      ])
+      if target.type == "BATCH_JOB"
+    ])
+    error_message = "Valid value for `batch_job.array_size` is between `2` and `10000`, and for `batch_job.job_attempts` is between `1` and `10`."
   }
   validation {
     condition = alltrue([
