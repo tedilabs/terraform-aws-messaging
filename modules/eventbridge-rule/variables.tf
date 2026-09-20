@@ -230,9 +230,34 @@ variable "aws_service_targets" {
   description = <<EOF
   (Optional) The configuration to manage the specified AWS service targets for the rule. Targets are the resources that are invoked when a rule is triggered. Each item of `aws_service_targets` as defined below.
     (Required) `id` - The unique ID of the target within the specified rule. Use this ID to reference the target when updating the rule.
-    (Required) `type` - The AWS resource type of the target. Valid values are `CLOUDWATCH_LOG_GROUP`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
+    (Required) `type` - The AWS resource type of the target. Valid values are `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`.
     (Optional) `cloudwatch_log_group` - The configuration for CloudWatch log group target. `cloudwatch_log_group` as defined below.
       (Required) `arn` - The Amazon Resource Name (ARN) of the CloudWatch log group.
+    (Optional) `ecs_task` - The configuration for ECS task target. `ecs_task` as defined below.
+      (Required) `cluster` - The Amazon Resource Name (ARN) of the ECS cluster to run the task on.
+      (Required) `task_definition` - The Amazon Resource Name (ARN) of the task definition to use. If the revision is omitted, the latest active revision is used.
+      (Optional) `task_count` - The number of tasks to create based on the task definition. Defaults to `1`.
+      (Optional) `launch_type` - The launch type on which the task is running. Valid values are `EC2`, `FARGATE` and `EXTERNAL`. If not provided, `capacity_provider_strategies` or the default capacity provider strategy of the cluster is used.
+      (Optional) `platform_version` - The platform version for the task, such as `1.4.0` or `LATEST`. Only used with the `FARGATE` launch type.
+      (Optional) `group` - The name of the task group to associate with the task.
+      (Optional) `network` - The network configuration for the task. Required for the tasks using the `awsvpc` network mode. `network` as defined below.
+        (Required) `subnets` - A set of subnet IDs associated with the task.
+        (Optional) `security_groups` - A set of security group IDs associated with the task. If not provided, the default security group of the VPC is used.
+        (Optional) `public_ip_enabled` - Whether to assign a public IP address to the task. Only used with the `FARGATE` launch type. Defaults to `false`.
+      (Optional) `capacity_provider_strategies` - A list of capacity provider strategies to use for the task. Conflicts with `launch_type`. Each item of `capacity_provider_strategies` as defined below.
+        (Required) `capacity_provider` - The short name of the capacity provider.
+        (Optional) `weight` - The relative percentage of the total number of tasks launched with the capacity provider. Defaults to `0`.
+        (Optional) `base` - The minimum number of tasks to run on the capacity provider. Defaults to `0`.
+      (Optional) `placement_constraints` - A list of placement constraints for the task. Maximum of 10. Each item of `placement_constraints` as defined below.
+        (Required) `type` - The type of the constraint. Valid values are `distinctInstance` and `memberOf`.
+        (Optional) `expression` - A cluster query language expression to apply to the constraint. Only used with the `memberOf` type.
+      (Optional) `placement_strategies` - A list of placement strategies for the task, in the order of evaluation. Maximum of 5. Each item of `placement_strategies` as defined below.
+        (Required) `type` - The type of the strategy. Valid values are `random`, `spread` and `binpack`.
+        (Optional) `field` - The field to apply the strategy against. Only used with the `spread` and `binpack` types.
+      (Optional) `propagate_tags_enabled` - Whether to propagate the tags from the task definition to the task. Defaults to `false`.
+      (Optional) `ecs_managed_tags_enabled` - Whether to enable the ECS managed tags for the task. Defaults to `false`.
+      (Optional) `execute_command_enabled` - Whether to enable ECS Exec for the task. Defaults to `false`.
+      (Optional) `tags` - A map of tags to assign to the task.
     (Optional) `firehose_delivery_stream` - The configuration for Amazon Data Firehose delivery stream target. `firehose_delivery_stream` as defined below.
       (Required) `arn` - The Amazon Resource Name (ARN) of the Firehose delivery stream.
     (Optional) `kinesis_stream` - The configuration for Kinesis data stream target. `kinesis_stream` as defined below.
@@ -260,7 +285,7 @@ variable "aws_service_targets" {
         `CHATBOT_CUSTOM_NOTIFICATION` - The extended version of `TRANSFORMER` input type.
       (Optional) `reference_variables` - A map of key-value pairs specified in the form of JSONPath (for example, `time = $.time`). Define variables that use JSON path to reference values in the original event source. Can define up to 100 variables. Only required if `input.type` is `TRANSFORMER` or `CHATBOT_CUSTOM_NOTIFICATION`.
 
-    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`. Only used by the target types which are invoked with an IAM role (`FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `SFN_STATE_MACHINE`, `SSM_RUN_COMMAND`); the other target types are invoked through the resource-based policies of the targets.
+    (Optional) `execution_role` - The ARN (Amazon Resource Name) of the IAM role to be used for this target when the rule is triggered. Only required if `default_execution_role.enabled` is `false`. Only used by the target types which are invoked with an IAM role (`ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `SFN_STATE_MACHINE`, `SSM_RUN_COMMAND`); the other target types are invoked through the resource-based policies of the targets.
 
     (Optional) `dead_letter_queue` - The configuration for dead-letter queue of the rule target. Dead letter queues are used for collecting and storing events that were not successfully delivered to targets. `dead_letter_queue` as defined below.
       (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
@@ -274,6 +299,36 @@ variable "aws_service_targets" {
     type = string
     cloudwatch_log_group = optional(object({
       arn = string
+    }))
+    ecs_task = optional(object({
+      cluster          = string
+      task_definition  = string
+      task_count       = optional(number, 1)
+      launch_type      = optional(string)
+      platform_version = optional(string)
+      group            = optional(string)
+      network = optional(object({
+        subnets           = set(string)
+        security_groups   = optional(set(string), [])
+        public_ip_enabled = optional(bool, false)
+      }))
+      capacity_provider_strategies = optional(list(object({
+        capacity_provider = string
+        weight            = optional(number, 0)
+        base              = optional(number, 0)
+      })), [])
+      placement_constraints = optional(list(object({
+        type       = string
+        expression = optional(string)
+      })), [])
+      placement_strategies = optional(list(object({
+        type  = string
+        field = optional(string)
+      })), [])
+      propagate_tags_enabled   = optional(bool, false)
+      ecs_managed_tags_enabled = optional(bool, false)
+      execute_command_enabled  = optional(bool, false)
+      tags                     = optional(map(string), {})
     }))
     firehose_delivery_stream = optional(object({
       arn = string
@@ -327,15 +382,16 @@ variable "aws_service_targets" {
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
-      contains(["CLOUDWATCH_LOG_GROUP", "FIREHOSE_DELIVERY_STREAM", "KINESIS_STREAM", "LAMBDA_FUNCTION", "SFN_STATE_MACHINE", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
+      contains(["CLOUDWATCH_LOG_GROUP", "ECS_TASK", "FIREHOSE_DELIVERY_STREAM", "KINESIS_STREAM", "LAMBDA_FUNCTION", "SFN_STATE_MACHINE", "SNS_TOPIC", "SQS_QUEUE", "SSM_RUN_COMMAND"], target.type)
     ])
-    error_message = "Valid values for `type` are `CLOUDWATCH_LOG_GROUP`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
+    error_message = "Valid values for `type` are `CLOUDWATCH_LOG_GROUP`, `ECS_TASK`, `FIREHOSE_DELIVERY_STREAM`, `KINESIS_STREAM`, `LAMBDA_FUNCTION`, `SFN_STATE_MACHINE`, `SNS_TOPIC`, `SQS_QUEUE`, `SSM_RUN_COMMAND`."
   }
   validation {
     condition = alltrue([
       for target in var.aws_service_targets :
       anytrue([
         target.type == "CLOUDWATCH_LOG_GROUP" ? strcontains(target.cloudwatch_log_group.arn, ":log-group:") : false,
+        target.type == "ECS_TASK" ? strcontains(target.ecs_task.cluster, ":cluster/") && strcontains(target.ecs_task.task_definition, ":task-definition/") : false,
         target.type == "FIREHOSE_DELIVERY_STREAM" ? strcontains(target.firehose_delivery_stream.arn, ":deliverystream/") : false,
         target.type == "KINESIS_STREAM" ? strcontains(target.kinesis_stream.arn, ":stream/") : false,
         target.type == "LAMBDA_FUNCTION" ? strcontains(target.lambda_function.arn, ":function:") : false,
@@ -346,6 +402,27 @@ variable "aws_service_targets" {
       ])
     ])
     error_message = "Valid ARN (Amazon Resource Name) for the target AWS resource is required depending on the value of `type`."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.aws_service_targets :
+      alltrue([
+        target.ecs_task.launch_type == null || contains(["EC2", "FARGATE", "EXTERNAL"], target.ecs_task.launch_type),
+        target.ecs_task.launch_type == null || length(target.ecs_task.capacity_provider_strategies) == 0,
+        length(target.ecs_task.placement_constraints) <= 10,
+        length(target.ecs_task.placement_strategies) <= 5,
+        alltrue([
+          for constraint in target.ecs_task.placement_constraints :
+          contains(["distinctInstance", "memberOf"], constraint.type)
+        ]),
+        alltrue([
+          for strategy in target.ecs_task.placement_strategies :
+          contains(["random", "spread", "binpack"], strategy.type)
+        ]),
+      ])
+      if target.type == "ECS_TASK"
+    ])
+    error_message = "Valid values for `ecs_task.launch_type` are `EC2`, `FARGATE`, `EXTERNAL` and it conflicts with `ecs_task.capacity_provider_strategies`. A maximum of 10 `ecs_task.placement_constraints` (`distinctInstance`, `memberOf`) and 5 `ecs_task.placement_strategies` (`random`, `spread`, `binpack`) are allowed."
   }
   validation {
     condition = alltrue([

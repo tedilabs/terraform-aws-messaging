@@ -53,6 +53,12 @@ module "role" {
       }
       : {}
     ),
+    (one(data.aws_iam_policy_document.ecs_tasks) != null
+      ? {
+        "ecs-task-targets" = one(data.aws_iam_policy_document.ecs_tasks).json
+      }
+      : {}
+    ),
     (one(data.aws_iam_policy_document.firehose_delivery_streams) != null
       ? {
         "firehose-delivery-stream-targets" = one(data.aws_iam_policy_document.firehose_delivery_streams).json
@@ -170,6 +176,55 @@ data "aws_iam_policy_document" "ssm_run_command" {
   }
 }
 
+
+data "aws_iam_policy_document" "ecs_tasks" {
+  count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["ECS_TASK"]) > 0) ? 1 : 0
+
+  statement {
+    sid = "AllowEcsTaskTargets"
+
+    effect  = "Allow"
+    actions = ["ecs:RunTask"]
+    resources = distinct([
+      for target in local.aws_service_targets_by_type["ECS_TASK"] :
+      "${replace(target.ecs_task.task_definition, "/:[0-9]+$/", "")}:*"
+    ])
+
+    condition {
+      test     = "ArnEquals"
+      variable = "ecs:cluster"
+      values   = distinct(local.aws_service_targets_by_type["ECS_TASK"][*].ecs_task.cluster)
+    }
+  }
+
+  statement {
+    sid = "AllowEcsTaskTagging"
+
+    effect    = "Allow"
+    actions   = ["ecs:TagResource"]
+    resources = ["arn:${local.partition}:ecs:${local.region}:${local.account_id}:task/*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "ecs:CreateAction"
+      values   = ["RunTask"]
+    }
+  }
+
+  statement {
+    sid = "AllowPassRoleToEcsTasks"
+
+    effect    = "Allow"
+    actions   = ["iam:PassRole"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringLike"
+      variable = "iam:PassedToService"
+      values   = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
 
 data "aws_iam_policy_document" "firehose_delivery_streams" {
   count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["FIREHOSE_DELIVERY_STREAM"]) > 0) ? 1 : 0
