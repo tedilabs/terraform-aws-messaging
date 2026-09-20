@@ -53,6 +53,24 @@ module "role" {
       }
       : {}
     ),
+    (one(data.aws_iam_policy_document.firehose_delivery_streams) != null
+      ? {
+        "firehose-delivery-stream-targets" = one(data.aws_iam_policy_document.firehose_delivery_streams).json
+      }
+      : {}
+    ),
+    (one(data.aws_iam_policy_document.kinesis_streams) != null
+      ? {
+        "kinesis-stream-targets" = one(data.aws_iam_policy_document.kinesis_streams).json
+      }
+      : {}
+    ),
+    (one(data.aws_iam_policy_document.sfn_state_machines) != null
+      ? {
+        "sfn-state-machine-targets" = one(data.aws_iam_policy_document.sfn_state_machines).json
+      }
+      : {}
+    ),
     var.default_execution_role.inline_policies
   )
 
@@ -149,5 +167,48 @@ data "aws_iam_policy_document" "ssm_run_command" {
         }
       }
     }
+  }
+}
+
+
+data "aws_iam_policy_document" "firehose_delivery_streams" {
+  count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["FIREHOSE_DELIVERY_STREAM"]) > 0) ? 1 : 0
+
+  statement {
+    sid = "AllowFirehoseDeliveryStreamTargets"
+
+    effect = "Allow"
+    actions = [
+      "firehose:PutRecord",
+      "firehose:PutRecordBatch",
+    ]
+    resources = local.aws_service_targets_by_type["FIREHOSE_DELIVERY_STREAM"][*].firehose_delivery_stream.arn
+  }
+}
+
+data "aws_iam_policy_document" "kinesis_streams" {
+  count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["KINESIS_STREAM"]) > 0) ? 1 : 0
+
+  statement {
+    sid = "AllowKinesisStreamTargets"
+
+    effect = "Allow"
+    actions = [
+      "kinesis:PutRecord",
+      "kinesis:PutRecords",
+    ]
+    resources = local.aws_service_targets_by_type["KINESIS_STREAM"][*].kinesis_stream.arn
+  }
+}
+
+data "aws_iam_policy_document" "sfn_state_machines" {
+  count = (var.default_execution_role.enabled && length(local.aws_service_targets_by_type["SFN_STATE_MACHINE"]) > 0) ? 1 : 0
+
+  statement {
+    sid = "AllowSfnStateMachineTargets"
+
+    effect    = "Allow"
+    actions   = ["states:StartExecution"]
+    resources = local.aws_service_targets_by_type["SFN_STATE_MACHINE"][*].sfn_state_machine.arn
   }
 }
