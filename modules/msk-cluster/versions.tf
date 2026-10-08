@@ -10,5 +10,9 @@ terraform {
       source  = "hashicorp/random"
       version = ">= 3.6"
     }
+    telemetry = {
+      source  = "tedilabs/telemetry"
+      version = ">= 0.1.1"
+    }
   }
 }
