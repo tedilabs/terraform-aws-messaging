@@ -4,7 +4,6 @@ locals {
     : join(".", [
       local.metadata.package,
       local.metadata.module,
-      var.event_bus,
       replace(local.metadata.name, "/[^a-zA-Z0-9_\\.-]/", "-"),
     ])
   )

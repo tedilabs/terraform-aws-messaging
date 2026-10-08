@@ -3,7 +3,7 @@ locals {
     package = "terraform-aws-messaging"
     version = trimspace(file("${path.module}/../../VERSION"))
     module  = basename(path.module)
-    name    = "${replace(var.event_bus, "/^arn:[^:]+:events:[^:]*:[^:]*:event-bus[/]/", "")}/${var.name}"
+    name    = "${var.event_bus}/${var.name}"
   }
   module_tags = var.module_tags_enabled ? {
     "module.terraform.io/package"   = local.metadata.package

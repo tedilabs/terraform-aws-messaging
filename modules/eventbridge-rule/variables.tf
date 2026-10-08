@@ -6,10 +6,15 @@ variable "region" {
 }
 
 variable "event_bus" {
-  description = "(Optional) The name or ARN of the event bus to associate with this rule. If you omit this, the `default` event bus is used."
+  description = "(Optional) The name of the event bus to associate with this rule. ARNs are not supported. If you omit this, the `default` event bus is used."
   type        = string
   default     = "default"
   nullable    = false
+
+  validation {
+    condition     = can(regex("^[/\\.\\-_A-Za-z0-9]+$", var.event_bus))
+    error_message = "`event_bus` must be the name of an event bus, not an ARN. Valid characters are letters, numbers, `.`, `-`, `_` and `/`."
+  }
 }
 
 variable "name" {
@@ -46,7 +51,7 @@ variable "default_execution_role" {
   description = <<EOF
   (Optional) A configuration for the default execution role to use for the rule that is used for target invocation. Use `execution_role` if `default_execution_role.enabled` is `false`. `default_execution_role` as defined below.
     (Optional) `enabled` - Whether to create the default execution role. Defaults to `true`.
-    (Optional) `name` - The name of the default execution role. Defaults to `aws-eventbridge-$${var.event_bus}-rule-$${var.name}`.
+    (Optional) `name` - The name of the default execution role. Defaults to `aws-eventbridge-$${var.event_bus}-rule-$${var.name}`, with `/` in the event bus name replaced by `-`.
     (Optional) `path` - The path of the default execution role. Defaults to `/`.
     (Optional) `description` - The description of the default execution role.
     (Optional) `policies` - A list of IAM policy ARNs to attach to the default execution role. Defaults to `[]`.
