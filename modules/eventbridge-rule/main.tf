@@ -3,7 +3,7 @@ locals {
     package = "terraform-aws-messaging"
     version = trimspace(file("${path.module}/../../VERSION"))
     module  = basename(path.module)
-    name    = var.name
+    name    = "${replace(var.event_bus, "/^arn:[^:]+:events:[^:]*:[^:]*:event-bus[/]/", "")}/${var.name}"
   }
   module_tags = var.module_tags_enabled ? {
     "module.terraform.io/package"   = local.metadata.package
@@ -46,7 +46,7 @@ resource "aws_cloudwatch_event_rule" "this" {
 
   tags = merge(
     {
-      "Name" = local.metadata.name
+      "Name" = var.name
     },
     local.module_tags,
     var.tags,
