@@ -23,7 +23,7 @@ module "role" {
 
   name = coalesce(
     var.default_execution_role.name,
-    "aws-eventbridge-${var.event_bus}-rule-${var.name}"
+    "aws-eventbridge-${replace(var.event_bus, "/", "-")}-rule-${var.name}"
   )
   path        = var.default_execution_role.path
   description = var.default_execution_role.description
