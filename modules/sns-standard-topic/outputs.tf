@@ -47,6 +47,8 @@ output "subscriptions" {
         email     = subscription.endpoint
         is_active = !subscription.pending_confirmation
 
+        confirmation_timeout_in_minutes = subscription.confirmation_timeout_in_minutes
+
         filter_policy = try({
           enabled = subscription.filter_policy != null && subscription.filter_policy != ""
           scope = try(
@@ -71,6 +73,8 @@ output "subscriptions" {
         name      = subscription.endpoint
         email     = subscription.endpoint
         is_active = !subscription.pending_confirmation
+
+        confirmation_timeout_in_minutes = subscription.confirmation_timeout_in_minutes
 
         filter_policy = try({
           enabled = subscription.filter_policy != null && subscription.filter_policy != ""
@@ -157,6 +161,19 @@ output "encryption_at_rest" {
   value = {
     enabled = var.encryption_at_rest.enabled
     kms_key = aws_sns_topic.this.kms_master_key_id
+  }
+}
+
+output "delivery_status_logging" {
+  description = "The configuration for the delivery status logging of the SNS topic, keyed by endpoint type."
+  value = {
+    for type, config in var.delivery_status_logging :
+    type => {
+      enabled                      = config.enabled
+      success_feedback_role        = aws_sns_topic.this["${type}_success_feedback_role_arn"]
+      success_feedback_sample_rate = aws_sns_topic.this["${type}_success_feedback_sample_rate"]
+      failure_feedback_role        = aws_sns_topic.this["${type}_failure_feedback_role_arn"]
+    }
   }
 }
 
