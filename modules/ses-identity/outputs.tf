@@ -14,8 +14,13 @@ output "id" {
 }
 
 output "status" {
-  description = "The status of the SES identity."
+  description = "The status of the SES identity. `VERIFIED` if the identity is verified for sending, `PENDING` otherwise."
   value       = aws_sesv2_email_identity.this.verified_for_sending_status ? "VERIFIED" : "PENDING"
+}
+
+output "verification_status" {
+  description = "The verification status of the SES identity. Valid values are `PENDING`, `SUCCESS`, `FAILED`, `TEMPORARY_FAILURE`, `NOT_STARTED`."
+  value       = aws_sesv2_email_identity.this.verification_status
 }
 
 output "name" {
