@@ -62,11 +62,25 @@ resource "aws_msk_cluster" "this" {
       var.broker_additional_security_groups
     )
 
-    # TODO: `vpc_connectivity`
-    # TODO: public access cidrs
     connectivity_info {
+      network_type = var.broker_network_type
+
       public_access {
         type = var.broker_public_access_enabled ? "SERVICE_PROVIDED_EIPS" : "DISABLED"
+      }
+
+      dynamic "vpc_connectivity" {
+        for_each = var.broker_vpc_connectivity.enabled ? [var.broker_vpc_connectivity] : []
+
+        content {
+          client_authentication {
+            sasl {
+              iam   = vpc_connectivity.value.sasl_iam.enabled
+              scram = vpc_connectivity.value.sasl_scram.enabled
+            }
+            tls = vpc_connectivity.value.tls.enabled
+          }
+        }
       }
     }
 
@@ -82,6 +96,14 @@ resource "aws_msk_cluster" "this" {
     }
   }
   storage_mode = var.cluster_storage_mode
+
+  dynamic "rebalancing" {
+    for_each = startswith(var.broker_instance_type, "express.") ? [var.rebalancing] : []
+
+    content {
+      status = rebalancing.value.enabled ? "ACTIVE" : "PAUSED"
+    }
+  }
 
   configuration_info {
     arn      = aws_msk_configuration.this.arn
