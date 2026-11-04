@@ -41,7 +41,31 @@ resource "aws_cloudwatch_event_bus" "this" {
   region = var.region
 
   name              = var.name
+  description       = var.description
   event_source_name = startswith(var.name, "aws.partner/") ? var.name : null
+
+
+  ## Encryption
+  kms_key_identifier = var.encryption_at_rest.kms_key
+
+
+  ## Dead Letter Queue
+  dynamic "dead_letter_config" {
+    for_each = var.dead_letter_queue.enabled ? [var.dead_letter_queue] : []
+    iterator = config
+
+    content {
+      arn = config.value.sqs_queue
+    }
+  }
+
+
+  ## Logging
+  log_config {
+    level          = var.logging.level
+    include_detail = var.logging.include_detail_enabled ? "FULL" : "NONE"
+  }
+
 
   tags = merge(
     {
@@ -86,6 +110,10 @@ resource "aws_cloudwatch_event_archive" "this" {
   retention_days = each.value.retention_in_days
 
   event_pattern = each.value.event_pattern
+
+
+  ## Encryption
+  kms_key_identifier = each.value.kms_key
 }
 
 
