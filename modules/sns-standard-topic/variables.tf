@@ -45,6 +45,7 @@ variable "subscriptions_by_email" {
   description = <<EOF
   (Optional) A configuration for email subscriptions to the SNS topic. Deliver messages to the subscriber via SMTP. Until the subscription is confirmed, AWS does not allow Terraform to delete / unsubscribe the subscription. If you destroy an unconfirmed subscription, Terraform will remove the subscription from its state but the subscription will still exist in AWS. Each block of `subscriptions_by_email` as defined below.
     (Required) `email` - An email address that can receive notifications from the SNS topic.
+    (Optional) `confirmation_timeout_in_minutes` - The number of minutes to wait for the subscription to be confirmed by the subscriber before Terraform fails. Defaults to `1`.
     (Optional) `filter_policy` - The configuration to filter the messages that a subscriber receives. Additions or changes to the filter policy require up to 15 minutes to fully take effect. `filter_policy` as defined below.
       (Optional) `enabled` - Whether to enable the filter policy. Defaults to `false`.
       (Optional) `scope` - Determine how the filter policy will be applied to the message.
@@ -55,7 +56,8 @@ variable "subscriptions_by_email" {
       (Optional) `dead_letter_sqs_queue` - The ARN of the SQS queue to which Amazon SNS can send undeliverable messages.
   EOF
   type = list(object({
-    email = string
+    email                           = string
+    confirmation_timeout_in_minutes = optional(number, 1)
     filter_policy = optional(object({
       enabled = optional(bool, false)
       scope   = optional(string, "ATTRIBUTES")
@@ -91,6 +93,7 @@ variable "subscriptions_by_email_json" {
   description = <<EOF
   (Optional) A configuration for JSON-encoded email subscriptions to the SNS topic. Deliver JSON-encoded messages to the subscriber via SMTP. Until the subscription is confirmed, AWS does not allow Terraform to delete / unsubscribe the subscription. If you destroy an unconfirmed subscription, Terraform will remove the subscription from its state but the subscription will still exist in AWS. Each block of `subscriptions_by_email_json` as defined below.
     (Required) `email` - An email address that can receive notifications from the SNS topic.
+    (Optional) `confirmation_timeout_in_minutes` - The number of minutes to wait for the subscription to be confirmed by the subscriber before Terraform fails. Defaults to `1`.
     (Optional) `filter_policy` - The configuration to filter the messages that a subscriber receives. Additions or changes to the filter policy require up to 15 minutes to fully take effect. `filter_policy` as defined below.
       (Optional) `enabled` - Whether to enable the filter policy. Defaults to `false`.
       (Optional) `scope` - Determine how the filter policy will be applied to the message.
@@ -101,7 +104,8 @@ variable "subscriptions_by_email_json" {
       (Optional) `dead_letter_sqs_queue` - The ARN of the SQS queue to which Amazon SNS can send undeliverable messages.
   EOF
   type = list(object({
-    email = string
+    email                           = string
+    confirmation_timeout_in_minutes = optional(number, 1)
     filter_policy = optional(object({
       enabled = optional(bool, false)
       scope   = optional(string, "ATTRIBUTES")
@@ -258,6 +262,72 @@ variable "encryption_at_rest" {
   })
   default  = {}
   nullable = false
+}
+
+variable "delivery_status_logging" {
+  description = <<EOF
+  (Optional) A configuration for the delivery status logging of the SNS topic. Amazon SNS logs the delivery status of notification messages sent to the endpoints of the supported types to CloudWatch Logs. Each key of `delivery_status_logging` is an endpoint type as defined below.
+    (Optional) `application` - The configuration for the delivery status logging of the platform application endpoints.
+    (Optional) `firehose` - The configuration for the delivery status logging of the Amazon Data Firehose endpoints.
+    (Optional) `http` - The configuration for the delivery status logging of the HTTP/S endpoints.
+    (Optional) `lambda` - The configuration for the delivery status logging of the Lambda function endpoints.
+    (Optional) `sqs` - The configuration for the delivery status logging of the SQS queue endpoints.
+  Each value of `delivery_status_logging` as defined below.
+    (Optional) `enabled` - Whether to enable the delivery status logging for the endpoint type. Defaults to `false`.
+    (Optional) `success_feedback_role` - The ARN of the IAM role permitted to receive success feedback for the endpoint type. At least one of `success_feedback_role` or `failure_feedback_role` is required if `enabled` is `true`.
+    (Optional) `success_feedback_sample_rate` - The percentage of successful deliveries to log. Valid value is between `0` and `100`. Defaults to `100`.
+    (Optional) `failure_feedback_role` - The ARN of the IAM role permitted to receive failure feedback for the endpoint type. At least one of `success_feedback_role` or `failure_feedback_role` is required if `enabled` is `true`.
+  EOF
+  type = object({
+    application = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+    firehose = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+    http = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+    lambda = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+    sqs = optional(object({
+      enabled                      = optional(bool, false)
+      success_feedback_role        = optional(string)
+      success_feedback_sample_rate = optional(number, 100)
+      failure_feedback_role        = optional(string)
+    }), {})
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for type, config in var.delivery_status_logging :
+      config.success_feedback_role != null || config.failure_feedback_role != null
+      if config.enabled
+    ])
+    error_message = "At least one of `success_feedback_role` or `failure_feedback_role` is required for each enabled endpoint type of `delivery_status_logging`."
+  }
+  validation {
+    condition = alltrue([
+      for type, config in var.delivery_status_logging :
+      config.success_feedback_sample_rate >= 0 && config.success_feedback_sample_rate <= 100
+    ])
+    error_message = "Valid value for `success_feedback_sample_rate` of each endpoint type of `delivery_status_logging` is between `0` and `100`."
+  }
 }
 
 variable "tags" {
