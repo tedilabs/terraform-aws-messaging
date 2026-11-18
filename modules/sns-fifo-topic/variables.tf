@@ -54,22 +54,14 @@ variable "encryption_at_rest" {
   description = <<EOF
   (Optional) A configuration to encrypt at rest in the SNS topic. Amazon SNS provides in-transit encryption by default. Enabling server-side encryption adds at-rest encryption to your topic. Amazon SNS encrypts your message as soon as it is received. The message is decrypted immediately prior to delivery. `encryption_at_rest` as defined below.
     (Optional) `enabled` - Whether to enable encryption at rest. Defaults to `false`.
-    (Optional) `kms_key` - The ID of AWS KMS CMK (Customer Master Key) used for the encryption. Required if `enabled` is `true`. Use `alias/aws/sns` for the AWS managed key.
+    (Optional) `kms_key` - The KMS key used for the encryption. Accepts the key ID, key ARN, alias name or alias ARN. Only used if `enabled` is `true`. Defaults to `alias/aws/sns`, the AWS managed key for Amazon SNS. AWS services such as CloudWatch alarms, EventBridge and S3 event notifications can not publish to a topic encrypted with the AWS managed key. Use a customer managed key for such topics.
   EOF
   type = object({
     enabled = optional(bool, false)
-    kms_key = optional(string)
+    kms_key = optional(string, "alias/aws/sns")
   })
   default  = {}
   nullable = false
-
-  validation {
-    condition = anytrue([
-      !var.encryption_at_rest.enabled,
-      var.encryption_at_rest.kms_key != null,
-    ])
-    error_message = "`kms_key` must be provided when `enabled` is `true`. The topic is not encrypted without a KMS key."
-  }
 }
 
 variable "tags" {
