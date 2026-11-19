@@ -6,6 +6,9 @@ data "aws_subnet" "this" {
 
 locals {
   vpc_id = data.aws_subnet.this.vpc_id
+
+  # MSK names every KRaft version with the `.kraft` suffix (e.g. `3.9.x.kraft`, `4.1.x.kraft`).
+  kraft_enabled = endswith(var.kafka_version, ".kraft")
 }
 
 
@@ -96,6 +99,9 @@ module "security_group" {
 
         ipv4_cidrs = var.broker_allowed_ingress_cidrs
       },
+    ],
+    # KRaft clusters have no ZooKeeper nodes.
+    !local.kraft_enabled ? [
       {
         id          = "zookeeper/cidrs"
         description = "Allow CIDRs to communicate with Kafka zookeepers."
@@ -105,7 +111,7 @@ module "security_group" {
 
         ipv4_cidrs = var.broker_allowed_ingress_cidrs
       },
-    ],
+    ] : [],
     var.prometheus.jmx_exporter_enabled ? [
       {
         id          = "prometheus-jmx-exporter/cidrs"
