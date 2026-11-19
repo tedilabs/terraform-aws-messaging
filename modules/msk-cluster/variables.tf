@@ -79,15 +79,47 @@ variable "broker_public_access_enabled" {
   nullable    = false
 }
 
-variable "broker_allowed_ingress_cidrs" {
-  description = "(Optional) A list of CIDR for MSK ingress access."
-  type        = list(string)
-  default     = ["10.0.0.0/8"]
-  nullable    = false
+variable "default_security_group" {
+  description = <<EOF
+  (Optional) The configuration of the default security group for the MSK cluster. `default_security_group` block as defined below.
+    (Optional) `enabled` - Whether to use the default security group. Defaults to `true`.
+    (Optional) `name` - The name of the default security group. If not provided, `msk-{name}` is used for the name of security group.
+    (Optional) `description` - The description of the default security group. Defaults to `Security group for MSK Cluster.`.
+    (Optional) `ingress_rules` - A list of ingress rules in a security group. You don't need to specify `protocol`, `from_port`, `to_port`. Just specify source information. Each source is allowed on every Kafka broker and ZooKeeper port the cluster uses. Defaults to `[{ id = "default", ipv4_cidrs = ["10.0.0.0/8"] }]`. Each block of `ingress_rules` as defined below.
+      (Required) `id` - The ID of the ingress rule. This value is only used internally within Terraform code.
+      (Optional) `description` - The description of the rule. If not provided, a description of each port is used.
+      (Optional) `ipv4_cidrs` - The IPv4 network ranges to allow, in CIDR notation.
+      (Optional) `ipv6_cidrs` - The IPv6 network ranges to allow, in CIDR notation.
+      (Optional) `prefix_lists` - The prefix list IDs to allow.
+      (Optional) `security_groups` - The source security group IDs to allow.
+      (Optional) `self` - Whether the security group itself will be added as a source to this ingress rule.
+  EOF
+  type = object({
+    enabled     = optional(bool, true)
+    name        = optional(string)
+    description = optional(string, "Security group for MSK Cluster.")
+    ingress_rules = optional(
+      list(object({
+        id              = string
+        description     = optional(string)
+        ipv4_cidrs      = optional(list(string), [])
+        ipv6_cidrs      = optional(list(string), [])
+        prefix_lists    = optional(list(string), [])
+        security_groups = optional(list(string), [])
+        self            = optional(bool, false)
+      })),
+      [{
+        id         = "default"
+        ipv4_cidrs = ["10.0.0.0/8"]
+      }]
+    )
+  })
+  default  = {}
+  nullable = false
 }
 
-variable "broker_additional_security_groups" {
-  description = "(Optional) A list of security group IDs to associate with ENIs to control who can communicate with the cluster."
+variable "security_groups" {
+  description = "(Optional) A list of security group IDs to associate with ENIs of the MSK cluster broker nodes, in addition to the default security group."
   type        = list(string)
   default     = []
   nullable    = false
