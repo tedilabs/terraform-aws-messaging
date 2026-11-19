@@ -98,7 +98,6 @@ This module creates following resources.
 | <a name="output_logging"></a> [logging](#output\_logging) | A configuration for logging of the Kafka cluster.<br/>    `cloudwatch` - The configuration for MSK broker logs to CloudWatch Logs.<br/>    `firehose` - The configuration for MSK broker logs to Kinesis Firehose.<br/>    `s3` - The configuration for MSK broker logs to S3 Bucket. |
 | <a name="output_monitoring"></a> [monitoring](#output\_monitoring) | A configuration for monitoring of the Kafka cluster.<br/>    `cloudwatch_metrics` - The configuration for MSK CloudWatch Metrics.<br/>    `prometheus` - The configuration for Prometheus open monitoring. |
 | <a name="output_name"></a> [name](#output\_name) | The MSK cluster name. |
-| <a name="output_policy"></a> [policy](#output\_policy) | The resource-based policy of the MSK cluster. `null` if the cluster has no policy. |
 | <a name="output_region"></a> [region](#output\_region) | The AWS region this module resources resides in. |
 | <a name="output_resource_group"></a> [resource\_group](#output\_resource\_group) | The resource group created to manage resources in this module. |
 | <a name="output_security_groups"></a> [security\_groups](#output\_security\_groups) | A list of security group IDs which is associated with the broker nodes of the MSK cluster. |

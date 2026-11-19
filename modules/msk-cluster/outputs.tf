@@ -46,11 +46,6 @@ output "security_groups" {
   value       = aws_msk_cluster.this.broker_node_group_info[0].security_groups
 }
 
-output "policy" {
-  description = "The resource-based policy of the MSK cluster. `null` if the cluster has no policy."
-  value       = one(aws_msk_cluster_policy.this[*].policy)
-}
-
 output "broker_nodes" {
   description = "The information of broker nodes in the kafka cluster."
   value       = data.aws_msk_broker_nodes.this.node_info_list
