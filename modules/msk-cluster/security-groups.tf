@@ -10,13 +10,7 @@ locals {
   # MSK names every KRaft version with the `.kraft` suffix (e.g. `3.9.x.kraft`, `4.1.x.kraft`).
   kraft_enabled = endswith(var.kafka_version, ".kraft")
 
-  security_groups = concat(
-    (var.default_security_group.enabled
-      ? module.security_group[*].id
-      : []
-    ),
-    var.security_groups,
-  )
+  security_groups = concat(module.security_group[*].id, var.security_groups)
 
   # Every source in `default_security_group.ingress_rules` is allowed on each of these ports.
   broker_ports = concat(
