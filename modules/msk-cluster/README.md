@@ -15,7 +15,7 @@ This module creates following resources.
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.12 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 6.12 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 6.53 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.6 |
 | <a name="requirement_telemetry"></a> [telemetry](#requirement\_telemetry) | >= 0.2.0 |
 
@@ -23,7 +23,7 @@ This module creates following resources.
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 6.12 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 6.53 |
 | <a name="provider_random"></a> [random](#provider\_random) | >= 3.6 |
 
 ## Modules
@@ -88,6 +88,7 @@ This module creates following resources.
 | <a name="output_broker_nodes"></a> [broker\_nodes](#output\_broker\_nodes) | The information of broker nodes in the kafka cluster. |
 | <a name="output_broker_storage"></a> [broker\_storage](#output\_broker\_storage) | The configuration for broker storage of the MSK cluster. |
 | <a name="output_cluster_storage_mode"></a> [cluster\_storage\_mode](#output\_cluster\_storage\_mode) | The storage mode of the MSK cluster. |
+| <a name="output_customer_action_status"></a> [customer\_action\_status](#output\_customer\_action\_status) | The status indicating whether Amazon MSK requires customer action for the cluster, such as a broker reboot or a certificate renewal. Valid values are `NONE`, `ACTION_RECOMMENDED` and `CRITICAL_ACTION_REQUIRED`. |
 | <a name="output_encryption_at_rest"></a> [encryption\_at\_rest](#output\_encryption\_at\_rest) | The configuration for encryption at rest of the Kafka cluster. |
 | <a name="output_encryption_in_transit"></a> [encryption\_in\_transit](#output\_encryption\_in\_transit) | The configuration for encryption in transit of the Kafka cluster. |
 | <a name="output_kafka_config"></a> [kafka\_config](#output\_kafka\_config) | The MSK configuration associated with the cluster. `null` if the cluster uses the MSK default configuration. |

@@ -23,6 +23,11 @@ output "version" {
   value       = aws_msk_cluster.this.current_version
 }
 
+output "customer_action_status" {
+  description = "The status indicating whether Amazon MSK requires customer action for the cluster, such as a broker reboot or a certificate renewal. Valid values are `NONE`, `ACTION_RECOMMENDED` and `CRITICAL_ACTION_REQUIRED`."
+  value       = aws_msk_cluster.this.customer_action_status
+}
+
 output "kafka_version" {
   description = "The MSK cluster version."
   value       = var.kafka_version
