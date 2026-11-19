@@ -51,7 +51,7 @@ resource "aws_msk_configuration" "this" {
   region = var.region
 
   name           = coalesce(var.default_cluster_configuration.name, var.name)
-  description    = coalesce(var.default_cluster_configuration.description, "Configuration for ${var.name} Kafka Cluster.")
+  description    = var.default_cluster_configuration.description
   kafka_versions = [var.kafka_version]
 
   server_properties = local.server_properties

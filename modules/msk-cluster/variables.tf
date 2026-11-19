@@ -23,13 +23,13 @@ variable "default_cluster_configuration" {
   (Optional) The configuration of the default MSK configuration for the cluster. Use `cluster_configuration` if `default_cluster_configuration.enabled` is `false`. `default_cluster_configuration` as defined below.
     (Optional) `enabled` - Whether to create and use the default MSK configuration managed by this module. Defaults to `true`.
     (Optional) `name` - The name of the default MSK configuration. If not provided, the cluster name is used.
-    (Optional) `description` - The description of the default MSK configuration. Defaults to `Configuration for {name} Kafka Cluster.`.
+    (Optional) `description` - The description of the default MSK configuration. Defaults to `Managed by Terraform.`.
     (Optional) `server_properties` - The key/value set for the contents of the `server.properties` file. Each key is the name of the Kafka property. Each value is the value of the Kafka property. Defaults to `{}`.
   EOF
   type = object({
     enabled           = optional(bool, true)
     name              = optional(string)
-    description       = optional(string)
+    description       = optional(string, "Managed by Terraform.")
     server_properties = optional(map(string), {})
   })
   default  = {}
