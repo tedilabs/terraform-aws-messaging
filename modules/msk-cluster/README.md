@@ -3,7 +3,7 @@
 This module creates following resources.
 
 - `aws_msk_cluster`
-- `aws_msk_configuration`
+- `aws_msk_configuration` (optional)
 - `aws_msk_scram_secret_association` (optional)
 - `aws_security_group` (optional)
 - `aws_security_group_rule` (optional)
@@ -86,7 +86,6 @@ This module creates following resources.
 | <a name="output_bootstrap_brokers_for_vpc_connectivity"></a> [bootstrap\_brokers\_for\_vpc\_connectivity](#output\_bootstrap\_brokers\_for\_vpc\_connectivity) | The information to bootstrap connectivity to the Kafka cluster for VPC connectivity.<br/>    `sasl_iam` - A comma separated list of one or more DNS names (or IPs) and SASL IAM port pairs for VPC connectivity. AWS may not always return all endpoints so the values may not be stable across applies.<br/>    `sasl_scram` - A comma separated list of one or more DNS names (or IPs) and SASL SCRAM port pairs for VPC connectivity. AWS may not always return all endpoints so the values may not be stable across applies.<br/>    `tls` - A comma separated list of one or more DNS names (or IPs) and TLS port pairs for VPC connectivity. AWS may not always return all endpoints so the values may not be stable across applies. |
 | <a name="output_broker"></a> [broker](#output\_broker) | A configuration for brokers of the Kafka cluster.<br/>    `size` - The number of broker nodes in the kafka cluster.<br/>    `instance_type` - The instance type used by the kafka brokers.<br/><br/>    `public_access_enabled` - Whether public access to MSK brokers is enabled.<br/>    `security_groups` - A list of the security groups associated with the MSK cluster. |
 | <a name="output_broker_nodes"></a> [broker\_nodes](#output\_broker\_nodes) | The information of broker nodes in the kafka cluster. |
-| <a name="output_broker_security_group_id"></a> [broker\_security\_group\_id](#output\_broker\_security\_group\_id) | The id of security group that were created for the MSK cluster. |
 | <a name="output_broker_storage"></a> [broker\_storage](#output\_broker\_storage) | The configuration for broker storage of the MSK cluster. |
 | <a name="output_cluster_storage_mode"></a> [cluster\_storage\_mode](#output\_cluster\_storage\_mode) | The storage mode of the MSK cluster. |
 | <a name="output_encryption_at_rest"></a> [encryption\_at\_rest](#output\_encryption\_at\_rest) | The configuration for encryption at rest of the Kafka cluster. |
@@ -98,6 +97,7 @@ This module creates following resources.
 | <a name="output_name"></a> [name](#output\_name) | The MSK cluster name. |
 | <a name="output_region"></a> [region](#output\_region) | The AWS region this module resources resides in. |
 | <a name="output_resource_group"></a> [resource\_group](#output\_resource\_group) | The resource group created to manage resources in this module. |
+| <a name="output_security_groups"></a> [security\_groups](#output\_security\_groups) | A list of security group IDs which is associated with the broker nodes of the MSK cluster. |
 | <a name="output_uuid"></a> [uuid](#output\_uuid) | The UUID of the MSK cluster, for use in IAM policies. |
 | <a name="output_version"></a> [version](#output\_version) | Current version of the MSK Cluster used for updates. |
 | <a name="output_zookeeper_connections"></a> [zookeeper\_connections](#output\_zookeeper\_connections) | A configuration for connecting to the Apache Zookeeper cluster.<br/>    `tcp` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster.<br/>    `tls` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster via TLS. |
