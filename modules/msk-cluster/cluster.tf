@@ -76,6 +76,11 @@ data "aws_msk_configuration" "this" {
 # MSK Cluster
 ###################################################
 
+locals {
+  # MSK names every Express broker type with the `express.` prefix (e.g. `express.m7g.large`).
+  express_enabled = startswith(var.broker_instance_type, "express.")
+}
+
 resource "aws_msk_cluster" "this" {
   region = var.region
 
@@ -96,13 +101,18 @@ resource "aws_msk_cluster" "this" {
       }
     }
 
-    storage_info {
-      ebs_storage_info {
-        volume_size = var.broker_storage.volume_size
+    # Express brokers manage their storage, so `storage_info` must not be set.
+    dynamic "storage_info" {
+      for_each = local.express_enabled ? [] : [var.broker_storage]
 
-        provisioned_throughput {
-          enabled           = var.broker_storage.provisioned_throughput.enabled
-          volume_throughput = var.broker_storage.provisioned_throughput.enabled ? var.broker_storage.provisioned_throughput.throughput : null
+      content {
+        ebs_storage_info {
+          volume_size = storage_info.value.volume_size
+
+          provisioned_throughput {
+            enabled           = storage_info.value.provisioned_throughput.enabled
+            volume_throughput = storage_info.value.provisioned_throughput.enabled ? storage_info.value.provisioned_throughput.throughput : null
+          }
         }
       }
     }
@@ -165,6 +175,16 @@ resource "aws_msk_cluster" "this" {
         bucket  = var.logging.s3.bucket
         prefix  = var.logging.s3.key_prefix
       }
+    }
+  }
+
+
+  ## Rebalancing
+  dynamic "rebalancing" {
+    for_each = local.express_enabled ? [var.rebalancing] : []
+
+    content {
+      status = rebalancing.value.enabled ? "ACTIVE" : "PAUSED"
     }
   }
 

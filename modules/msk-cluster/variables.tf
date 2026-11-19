@@ -60,7 +60,7 @@ variable "broker_size" {
 }
 
 variable "broker_instance_type" {
-  description = "(Optional) The instance type to use for the kafka brokers."
+  description = "(Optional) The instance type to use for the kafka brokers. Standard brokers use `kafka.*` instance types (e.g. `kafka.m5.large`), and Express brokers use `express.*` instance types (e.g. `express.m7g.large`). Defaults to `kafka.m5.large`."
   type        = string
   default     = "kafka.m5.large"
   nullable    = false
@@ -204,7 +204,7 @@ variable "security_groups" {
 
 variable "broker_storage" {
   description = <<EOF
-  (Optional) The configuration for broker storage of the MSK cluster. `broker_storage` is defined below.
+  (Optional) The configuration for broker storage of the MSK cluster. Ignored for Express brokers (`express.*` broker instance types), which manage their storage. `broker_storage` is defined below.
     (Optional) `volume_size` - The size in GiB of the EBS volume for the data drive on each broker node. Minimum value of `1` and maximum value of `16384`. Defaults to `1000`.
     (Optional) `provisioned_throughput` - The configuration for provisioned throughput of the EBS volume. `provisioned_throughput` is defined below.
       (Optional) `enabled` - Whether provisioned throughput is enabled or not. You can specify the provisioned throughput rate in MiB per second for clusters whose brokers are of type `kafka.m5.4xlarge` or larger and if the storage volume is 10 GiB or greater. Defaults to `false`.
@@ -234,6 +234,18 @@ variable "broker_storage" {
     ])
     error_message = "Valid value for `throughput` is greater than `250`."
   }
+}
+
+variable "rebalancing" {
+  description = <<EOF
+  (Optional) The configuration for intelligent rebalancing of the MSK cluster. Intelligent rebalancing automatically balances the partitions across the brokers. Only applied to the clusters with Express brokers (`express.*` broker instance types), and ignored for Standard brokers. `rebalancing` is defined below.
+    (Optional) `enabled` - Whether to enable intelligent rebalancing. Defaults to `true`, the default of AWS for new Express clusters.
+  EOF
+  type = object({
+    enabled = optional(bool, true)
+  })
+  default  = {}
+  nullable = false
 }
 
 variable "cluster_storage_mode" {
