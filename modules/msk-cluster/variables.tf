@@ -18,11 +18,37 @@ variable "kafka_version" {
   nullable    = false
 }
 
-variable "kafka_server_properties" {
-  description = "(Optional) Contents of the `server.properties` file for configuration of Kafka."
-  type        = map(string)
-  default     = {}
-  nullable    = false
+variable "default_cluster_configuration" {
+  description = <<EOF
+  (Optional) The configuration of the default MSK configuration for the cluster. Use `cluster_configuration` if `default_cluster_configuration.enabled` is `false`. `default_cluster_configuration` as defined below.
+    (Optional) `enabled` - Whether to create and use the default MSK configuration managed by this module. Defaults to `true`.
+    (Optional) `name` - The name of the default MSK configuration. If not provided, the cluster name is used.
+    (Optional) `description` - The description of the default MSK configuration. Defaults to `Configuration for {name} Kafka Cluster.`.
+    (Optional) `server_properties` - The key/value set for the contents of the `server.properties` file. Each key is the name of the Kafka property. Each value is the value of the Kafka property. Defaults to `{}`.
+  EOF
+  type = object({
+    enabled           = optional(bool, true)
+    name              = optional(string)
+    description       = optional(string)
+    server_properties = optional(map(string), {})
+  })
+  default  = {}
+  nullable = false
+}
+
+variable "cluster_configuration" {
+  description = "(Optional) The ARN of the MSK configuration to associate with the cluster. The latest revision of the configuration is always used. Only used if `default_cluster_configuration.enabled` is `false`. If omitted, the cluster uses the MSK default configuration."
+  type        = string
+  default     = null
+  nullable    = true
+
+  validation {
+    condition = (var.cluster_configuration != null
+      ? can(regex("^arn:aws[a-z-]*:kafka:[a-z0-9-]+:[0-9]{12}:configuration/[^/]+/.+$", var.cluster_configuration))
+      : true
+    )
+    error_message = "`cluster_configuration` must be the ARN of an MSK configuration."
+  }
 }
 
 # TODO: naming

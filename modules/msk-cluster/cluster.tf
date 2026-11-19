@@ -21,17 +21,37 @@ locals {
 
 locals {
   server_properties = <<EOT
-%{for k, v in var.kafka_server_properties~}
+%{for k, v in var.default_cluster_configuration.server_properties~}
 ${k} = ${v}
 %{endfor~}
 EOT
+
+  cluster_configuration = (var.default_cluster_configuration.enabled
+    ? {
+      arn               = aws_msk_configuration.this[0].arn
+      name              = aws_msk_configuration.this[0].name
+      latest_revision   = aws_msk_configuration.this[0].latest_revision
+      server_properties = aws_msk_configuration.this[0].server_properties
+    }
+    : (var.cluster_configuration != null
+      ? {
+        arn               = data.aws_msk_configuration.this[0].arn
+        name              = data.aws_msk_configuration.this[0].name
+        latest_revision   = data.aws_msk_configuration.this[0].latest_revision
+        server_properties = data.aws_msk_configuration.this[0].server_properties
+      }
+      : null
+    )
+  )
 }
 
 resource "aws_msk_configuration" "this" {
+  count = var.default_cluster_configuration.enabled ? 1 : 0
+
   region = var.region
 
-  name           = var.name
-  description    = "Configuration for ${var.name} Kafka Cluster."
+  name           = coalesce(var.default_cluster_configuration.name, var.name)
+  description    = coalesce(var.default_cluster_configuration.description, "Configuration for ${var.name} Kafka Cluster.")
   kafka_versions = [var.kafka_version]
 
   server_properties = local.server_properties
@@ -39,6 +59,16 @@ resource "aws_msk_configuration" "this" {
   lifecycle {
     create_before_destroy = true
   }
+}
+
+# INFO: The data source finds a configuration only by name, which is the
+# second segment of the ARN (`arn:...:configuration/{name}/{uuid}`).
+data "aws_msk_configuration" "this" {
+  count = (!var.default_cluster_configuration.enabled && var.cluster_configuration != null) ? 1 : 0
+
+  region = var.region
+
+  name = split("/", var.cluster_configuration)[1]
 }
 
 
@@ -83,9 +113,13 @@ resource "aws_msk_cluster" "this" {
   }
   storage_mode = var.cluster_storage_mode
 
-  configuration_info {
-    arn      = aws_msk_configuration.this.arn
-    revision = aws_msk_configuration.this.latest_revision
+  dynamic "configuration_info" {
+    for_each = local.cluster_configuration != null ? [local.cluster_configuration] : []
+
+    content {
+      arn      = configuration_info.value.arn
+      revision = configuration_info.value.latest_revision
+    }
   }
 
 
