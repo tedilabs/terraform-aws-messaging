@@ -349,6 +349,13 @@ variable "prometheus" {
   nullable = false
 }
 
+variable "policy" {
+  description = "(Optional) A valid policy JSON document. The resource-based policy of the MSK cluster defines who can access the cluster from other AWS accounts, such as for multi-VPC private connectivity (`kafka:CreateVpcConnection`) or MSK Replicator."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
 variable "timeouts" {
   description = "(Optional) How long to wait for the MSK cluster to be created/updated/deleted."
   type        = map(string)
