@@ -22,55 +22,47 @@ locals {
   broker_ports = concat(
     contains(["PLAINTEXT", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode) ? [
       {
-        id          = "broker-plaintext"
-        description = "Allow to communicate with Kafka brokers in plaintext."
-        port        = 9092
+        id   = "broker-plaintext"
+        port = 9092
       },
     ] : [],
     contains(["TLS", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode) ? [
       {
-        id          = "broker-tls"
-        description = "Allow to communicate with Kafka brokers in tls."
-        port        = 9094
+        id   = "broker-tls"
+        port = 9094
       },
     ] : [],
     var.authentication.sasl_scram.enabled ? [
       {
-        id          = "broker-sasl-scram"
-        description = "Allow to communicate with Kafka brokers in SASL SCRAM."
-        port        = 9096
+        id   = "broker-sasl-scram"
+        port = 9096
       },
     ] : [],
     var.authentication.sasl_iam.enabled ? [
       {
-        id          = "broker-sasl-iam"
-        description = "Allow to communicate with Kafka brokers in SASL IAM."
-        port        = 9098
+        id   = "broker-sasl-iam"
+        port = 9098
       },
     ] : [],
     [
       {
-        id          = "broker-public-tls"
-        description = "Allow to communicate with Kafka brokers in tls (public)."
-        port        = 9194
+        id   = "broker-public-tls"
+        port = 9194
       },
       {
-        id          = "broker-public-sasl-scram"
-        description = "Allow to communicate with Kafka brokers in SASL SCRAM (public)."
-        port        = 9196
+        id   = "broker-public-sasl-scram"
+        port = 9196
       },
       {
-        id          = "broker-public-sasl-iam"
-        description = "Allow to communicate with Kafka brokers in SASL IAM (public)."
-        port        = 9198
+        id   = "broker-public-sasl-iam"
+        port = 9198
       },
     ],
     # KRaft clusters have no ZooKeeper nodes.
     !local.kraft_enabled ? [
       {
-        id          = "zookeeper"
-        description = "Allow to communicate with Kafka zookeepers."
-        port        = 2181
+        id   = "zookeeper"
+        port = 2181
       },
     ] : [],
   )
@@ -89,7 +81,7 @@ module "security_group" {
 
   region = var.region
 
-  name        = coalesce(var.default_security_group.name, "msk-${var.name}")
+  name        = coalesce(var.default_security_group.name, var.name)
   description = var.default_security_group.description
   vpc_id      = local.vpc_id
 
@@ -98,11 +90,10 @@ module "security_group" {
       for port in local.broker_ports : [
         for rule in var.default_security_group.ingress_rules :
         merge(rule, {
-          id          = "${port.id}/${rule.id}"
-          description = coalesce(rule.description, port.description)
-          protocol    = "tcp"
-          from_port   = port.port
-          to_port     = port.port
+          id        = "${port.id}/${rule.id}"
+          protocol  = "tcp"
+          from_port = port.port
+          to_port   = port.port
         })
       ]
     ]),
