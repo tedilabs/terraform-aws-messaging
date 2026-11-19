@@ -111,6 +111,58 @@ variable "broker_public_access_enabled" {
   }
 }
 
+variable "broker_network_type" {
+  description = <<EOF
+  (Optional) The network type of the MSK cluster brokers. Valid values are `IPV4` and `DUAL`. Only updating from `IPV4` to `DUAL` is allowed. Defaults to `IPV4`.
+    `IPV4` - The brokers are reachable over IPv4 only.
+    `DUAL` - The brokers are reachable over both IPv4 and IPv6 (dual-stack). The subnets of the brokers must have IPv6 CIDR blocks.
+  EOF
+  type        = string
+  default     = "IPV4"
+  nullable    = false
+
+  validation {
+    condition     = contains(["IPV4", "DUAL"], var.broker_network_type)
+    error_message = "Valid values for `broker_network_type` are `IPV4` and `DUAL`."
+  }
+}
+
+variable "broker_vpc_connectivity" {
+  description = <<EOF
+  (Optional) The configuration for multi-VPC private connectivity of the MSK cluster brokers. Clients in other VPCs or AWS accounts connect to the brokers through AWS PrivateLink without VPC peering. Multi-VPC private connectivity can only be turned on for an existing cluster, and each client authentication type must also be enabled on the cluster via `authentication`. `broker_vpc_connectivity` is defined below.
+    (Optional) `enabled` - Whether to manage the multi-VPC private connectivity configuration of the cluster. Defaults to `false`.
+    (Optional) `sasl_iam` - The configuration for IAM client authentication for multi-VPC private connectivity. `sasl_iam` is defined below.
+      (Optional) `enabled` - Whether to enable IAM client authentication. Defaults to `false`.
+    (Optional) `sasl_scram` - The configuration for SASL/SCRAM client authentication for multi-VPC private connectivity. `sasl_scram` is defined below.
+      (Optional) `enabled` - Whether to enable SASL/SCRAM client authentication. Defaults to `false`.
+    (Optional) `tls` - The configuration for TLS client authentication for multi-VPC private connectivity. `tls` is defined below.
+      (Optional) `enabled` - Whether to enable TLS client authentication. Defaults to `false`.
+  EOF
+  type = object({
+    enabled = optional(bool, false)
+    sasl_iam = optional(object({
+      enabled = optional(bool, false)
+    }), {})
+    sasl_scram = optional(object({
+      enabled = optional(bool, false)
+    }), {})
+    tls = optional(object({
+      enabled = optional(bool, false)
+    }), {})
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      !var.broker_vpc_connectivity.sasl_iam.enabled || var.authentication.sasl_iam.enabled,
+      !var.broker_vpc_connectivity.sasl_scram.enabled || var.authentication.sasl_scram.enabled,
+      !var.broker_vpc_connectivity.tls.enabled || var.authentication.tls.enabled,
+    ])
+    error_message = "Each client authentication type of `broker_vpc_connectivity` must also be enabled on the cluster via `authentication`."
+  }
+}
+
 variable "default_security_group" {
   description = <<EOF
   (Optional) The configuration of the default security group for the MSK cluster. `default_security_group` block as defined below.

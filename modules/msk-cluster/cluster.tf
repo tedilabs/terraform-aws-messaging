@@ -93,10 +93,25 @@ resource "aws_msk_cluster" "this" {
     client_subnets  = var.broker_subnets
     security_groups = local.security_groups
 
-    # TODO: `vpc_connectivity`
     connectivity_info {
+      network_type = var.broker_network_type
+
       public_access {
         type = var.broker_public_access_enabled ? "SERVICE_PROVIDED_EIPS" : "DISABLED"
+      }
+
+      dynamic "vpc_connectivity" {
+        for_each = var.broker_vpc_connectivity.enabled ? [var.broker_vpc_connectivity] : []
+
+        content {
+          client_authentication {
+            sasl {
+              iam   = vpc_connectivity.value.sasl_iam.enabled
+              scram = vpc_connectivity.value.sasl_scram.enabled
+            }
+            tls = vpc_connectivity.value.tls.enabled
+          }
+        }
       }
     }
 

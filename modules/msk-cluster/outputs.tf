@@ -62,14 +62,29 @@ output "broker" {
     `size` - The number of broker nodes in the kafka cluster.
     `instance_type` - The instance type used by the kafka brokers.
 
+    `network_type` - The network type of the brokers. `IPV4` or `DUAL`.
     `public_access_enabled` - Whether public access to MSK brokers is enabled.
+    `vpc_connectivity` - The configuration for multi-VPC private connectivity of the brokers.
   EOF
   value = {
     size          = aws_msk_cluster.this.number_of_broker_nodes
     instance_type = aws_msk_cluster.this.broker_node_group_info[0].instance_type
 
     subnets               = aws_msk_cluster.this.broker_node_group_info[0].client_subnets
+    network_type          = aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].network_type
     public_access_enabled = var.broker_public_access_enabled
+    vpc_connectivity = {
+      enabled = var.broker_vpc_connectivity.enabled
+      sasl_iam = {
+        enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].sasl[0].iam, false)
+      }
+      sasl_scram = {
+        enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].sasl[0].scram, false)
+      }
+      tls = {
+        enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].tls, false)
+      }
+    }
   }
 }
 
@@ -223,6 +238,22 @@ output "bootstrap_brokers_for_vpc_connectivity" {
     sasl_iam   = aws_msk_cluster.this.bootstrap_brokers_vpc_connectivity_sasl_iam
     sasl_scram = aws_msk_cluster.this.bootstrap_brokers_vpc_connectivity_sasl_scram
     tls        = aws_msk_cluster.this.bootstrap_brokers_vpc_connectivity_tls
+  }
+}
+
+output "bootstrap_brokers_for_ipv6" {
+  description = <<EOF
+  The information to bootstrap connectivity to the Kafka cluster over IPv6. Only contains values if `broker_network_type` is `DUAL`.
+    `plaintext` - A comma separated list of one or more hostname:port pairs of kafka brokers suitable to boostrap connectivity to the kafka cluster over IPv6. Only contains value if `client_encryption_in_transit_mode` is set to PLAINTEXT or TLS_PLAINTEXT. AWS may not always return all endpoints so the values may not be stable across applies.
+    `sasl_iam` - A comma separated list of one or more DNS names (or IPs) and SASL IAM port pairs over IPv6. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS. AWS may not always return all endpoints so the values may not be stable across applies.
+    `sasl_scram` - A comma separated list of one or more DNS names (or IPs) and SASL SCRAM port pairs over IPv6. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS. AWS may not always return all endpoints so the values may not be stable across applies.
+    `tls` - A comma separated list of one or more DNS names (or IPs) and TLS port pairs kafka brokers suitable to boostrap connectivity to the kafka cluster over IPv6. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS. AWS may not always return all endpoints so the values may not be stable across applies.
+  EOF
+  value = {
+    plaintext  = aws_msk_cluster.this.bootstrap_brokers_ipv6
+    sasl_iam   = aws_msk_cluster.this.bootstrap_brokers_sasl_iam_ipv6
+    sasl_scram = aws_msk_cluster.this.bootstrap_brokers_sasl_scram_ipv6
+    tls        = aws_msk_cluster.this.bootstrap_brokers_tls_ipv6
   }
 }
 
