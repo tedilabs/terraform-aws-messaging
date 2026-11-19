@@ -29,13 +29,16 @@ output "kafka_version" {
 }
 
 output "kafka_config" {
-  description = "The MSK configuration."
-  value = {
-    arn             = aws_msk_configuration.this.arn
-    name            = aws_msk_configuration.this.name
-    latest_revision = aws_msk_configuration.this.latest_revision
-    properties      = aws_msk_configuration.this.server_properties
-  }
+  description = "The MSK configuration associated with the cluster. `null` if the cluster uses the MSK default configuration."
+  value = (local.cluster_configuration != null
+    ? {
+      arn             = local.cluster_configuration.arn
+      name            = local.cluster_configuration.name
+      latest_revision = local.cluster_configuration.latest_revision
+      properties      = local.cluster_configuration.server_properties
+    }
+    : null
+  )
 }
 
 output "broker_security_group_id" {
