@@ -41,9 +41,9 @@ output "kafka_config" {
   )
 }
 
-output "broker_security_group_id" {
-  description = "The id of security group that were created for the MSK cluster."
-  value       = try(module.security_group[*].id[0], null)
+output "security_groups" {
+  description = "A list of security group IDs which is associated with the broker nodes of the MSK cluster."
+  value       = aws_msk_cluster.this.broker_node_group_info[0].security_groups
 }
 
 output "broker_nodes" {
@@ -58,16 +58,13 @@ output "broker" {
     `instance_type` - The instance type used by the kafka brokers.
 
     `public_access_enabled` - Whether public access to MSK brokers is enabled.
-    `security_groups` - A list of the security groups associated with the MSK cluster.
   EOF
   value = {
     size          = aws_msk_cluster.this.number_of_broker_nodes
     instance_type = aws_msk_cluster.this.broker_node_group_info[0].instance_type
 
-    subnets                   = aws_msk_cluster.this.broker_node_group_info[0].client_subnets
-    public_access_enabled     = var.broker_public_access_enabled
-    security_groups           = aws_msk_cluster.this.broker_node_group_info[0].security_groups
-    default_security_group_id = module.security_group.id
+    subnets               = aws_msk_cluster.this.broker_node_group_info[0].client_subnets
+    public_access_enabled = var.broker_public_access_enabled
   }
 }
 
