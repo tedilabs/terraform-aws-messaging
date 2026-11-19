@@ -85,14 +85,36 @@ variable "default_security_group" {
     (Optional) `enabled` - Whether to use the default security group. Defaults to `true`.
     (Optional) `name` - The name of the default security group. If not provided, the cluster name is used for the name of security group.
     (Optional) `description` - The description of the default security group. Defaults to `Managed by Terraform.`.
-    (Optional) `ingress_rules` - A list of ingress rules in a security group. You don't need to specify `protocol`, `from_port`, `to_port`. Just specify source information. Each source is allowed on every Kafka broker and ZooKeeper port the cluster uses. Defaults to `[{ id = "default", ipv4_cidrs = ["0.0.0.0/0"] }]`. Each block of `ingress_rules` as defined below.
+    (Optional) `ingress_rules` - A list of ingress rules in a security group. Defaults to `[]`. Each block of `ingress_rules` as defined below.
       (Required) `id` - The ID of the ingress rule. This value is only used internally within Terraform code.
       (Optional) `description` - The description of the rule. Defaults to `Managed by Terraform.`.
+      (Required) `protocol` - The protocol to match. Note that if `protocol` is set to `-1`, it translates to all protocols, all port ranges, and `from_port` and `to_port` values should not be defined.
+      (Required) `from_port` - The start of port range for the protocols.
+      (Required) `to_port` - The end of port range for the protocols.
       (Optional) `ipv4_cidrs` - The IPv4 network ranges to allow, in CIDR notation.
       (Optional) `ipv6_cidrs` - The IPv6 network ranges to allow, in CIDR notation.
       (Optional) `prefix_lists` - The prefix list IDs to allow.
       (Optional) `security_groups` - The source security group IDs to allow.
       (Optional) `self` - Whether the security group itself will be added as a source to this ingress rule.
+    (Optional) `egress_rules` - A list of egress rules in a security group. Defaults to `[]`. Each block of `egress_rules` as defined below.
+      (Required) `id` - The ID of the egress rule. This value is only used internally within Terraform code.
+      (Optional) `description` - The description of the rule. Defaults to `Managed by Terraform.`.
+      (Required) `protocol` - The protocol to match. Note that if `protocol` is set to `-1`, it translates to all protocols, all port ranges, and `from_port` and `to_port` values should not be defined.
+      (Required) `from_port` - The start of port range for the protocols.
+      (Required) `to_port` - The end of port range for the protocols.
+      (Optional) `ipv4_cidrs` - The IPv4 network ranges to allow, in CIDR notation.
+      (Optional) `ipv6_cidrs` - The IPv6 network ranges to allow, in CIDR notation.
+      (Optional) `prefix_lists` - The prefix list IDs to allow.
+      (Optional) `security_groups` - The source security group IDs to allow.
+      (Optional) `self` - Whether the security group itself will be added as a source to this egress rule.
+    (Optional) `broker_ingress_ipv4_cidrs` - A list of IPv4 CIDR ranges to allow on the Kafka broker and ZooKeeper ports that the cluster uses. Defaults to `[]`.
+    (Optional) `broker_ingress_ipv6_cidrs` - A list of IPv6 CIDR ranges to allow on the Kafka broker and ZooKeeper ports that the cluster uses. Defaults to `[]`.
+    (Optional) `broker_ingress_prefix_lists` - A list of prefix list IDs to allow on the Kafka broker and ZooKeeper ports that the cluster uses. Defaults to `[]`.
+    (Optional) `broker_ingress_security_groups` - A list of security group IDs to allow on the Kafka broker and ZooKeeper ports that the cluster uses. Defaults to `[]`.
+    (Optional) `prometheus_ingress_ipv4_cidrs` - A list of IPv4 CIDR ranges to allow on the enabled Prometheus exporter ports. Defaults to `[]`.
+    (Optional) `prometheus_ingress_ipv6_cidrs` - A list of IPv6 CIDR ranges to allow on the enabled Prometheus exporter ports. Defaults to `[]`.
+    (Optional) `prometheus_ingress_prefix_lists` - A list of prefix list IDs to allow on the enabled Prometheus exporter ports. Defaults to `[]`.
+    (Optional) `prometheus_ingress_security_groups` - A list of security group IDs to allow on the enabled Prometheus exporter ports. Defaults to `[]`.
   EOF
   type = object({
     enabled     = optional(bool, true)
@@ -102,17 +124,40 @@ variable "default_security_group" {
       list(object({
         id              = string
         description     = optional(string, "Managed by Terraform.")
+        protocol        = string
+        from_port       = number
+        to_port         = number
         ipv4_cidrs      = optional(list(string), [])
         ipv6_cidrs      = optional(list(string), [])
         prefix_lists    = optional(list(string), [])
         security_groups = optional(list(string), [])
         self            = optional(bool, false)
       })),
-      [{
-        id         = "default"
-        ipv4_cidrs = ["0.0.0.0/0"]
-      }]
+      []
     )
+    egress_rules = optional(
+      list(object({
+        id              = string
+        description     = optional(string, "Managed by Terraform.")
+        protocol        = string
+        from_port       = number
+        to_port         = number
+        ipv4_cidrs      = optional(list(string), [])
+        ipv6_cidrs      = optional(list(string), [])
+        prefix_lists    = optional(list(string), [])
+        security_groups = optional(list(string), [])
+        self            = optional(bool, false)
+      })),
+      []
+    )
+    broker_ingress_ipv4_cidrs          = optional(list(string), [])
+    broker_ingress_ipv6_cidrs          = optional(list(string), [])
+    broker_ingress_prefix_lists        = optional(list(string), [])
+    broker_ingress_security_groups     = optional(list(string), [])
+    prometheus_ingress_ipv4_cidrs      = optional(list(string), [])
+    prometheus_ingress_ipv6_cidrs      = optional(list(string), [])
+    prometheus_ingress_prefix_lists    = optional(list(string), [])
+    prometheus_ingress_security_groups = optional(list(string), [])
   })
   default  = {}
   nullable = false
@@ -295,12 +340,10 @@ variable "prometheus" {
   The configuration for Open Monitoring with Prometheus of the MSK cluster. `prometheus` is defined below.
     (Optional) `jmx_exporter_enabled` - Whether to enable or disable the JMX Exporter.
     (Optional) `node_exporter_enabled` - Whether to enable or disable the Node Exporter.
-    (Optional) `allowed_ingress_ipv4_cidrs` - A list of IPv4 CIDRs to allow ingress access to Prometheus endpoint.
   EOF
   type = object({
-    jmx_exporter_enabled       = optional(bool, false)
-    node_exporter_enabled      = optional(bool, false)
-    allowed_ingress_ipv4_cidrs = optional(set(string), ["10.0.0.0/8"])
+    jmx_exporter_enabled  = optional(bool, false)
+    node_exporter_enabled = optional(bool, false)
   })
   default  = {}
   nullable = false
