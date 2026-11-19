@@ -12,9 +12,9 @@ variable "name" {
 }
 
 variable "kafka_version" {
-  description = "(Optional) Kafka version to use for the MSK cluster."
+  description = "(Optional) Kafka version to use for the MSK cluster. Defaults to `3.9.x`, the version recommended by AWS."
   type        = string
-  default     = "3.6.0"
+  default     = "3.9.x"
   nullable    = false
 }
 
