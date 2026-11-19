@@ -270,11 +270,11 @@ variable "encryption_in_transit" {
   description = <<EOF
   The configuration for in-transit encryption of the MSK cluster.
     (Optional) `in_cluster_enabled` - Whether data communication among broker nodes is encrypted. Defaults to `true`.
-    (Optional) `client_mode` - Encryption setting for data in transit between clients and brokers. Valid values are `TLS`, `TLS_PLAINTEXT`, `PLAINTEXT`. Defaults to `TLS_PLAINTEXT`.
+    (Optional) `client_mode` - Encryption setting for data in transit between clients and brokers. Valid values are `TLS`, `TLS_PLAINTEXT`, `PLAINTEXT`. Defaults to `TLS`.
   EOF
   type = object({
     in_cluster_enabled = optional(bool, true)
-    client_mode        = optional(string, "TLS_PLAINTEXT")
+    client_mode        = optional(string, "TLS")
   })
   default  = {}
   nullable = false
