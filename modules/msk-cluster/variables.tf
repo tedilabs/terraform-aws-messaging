@@ -238,8 +238,8 @@ variable "broker_storage" {
 
 variable "intelligent_rebalancing" {
   description = <<EOF
-  (Optional) The configuration for intelligent rebalancing of the MSK cluster. Intelligent rebalancing automatically balances the partitions across the brokers. Only applied to the clusters with Express brokers (`express.*` broker instance types), and ignored for Standard brokers. `intelligent_rebalancing` is defined below.
-    (Optional) `enabled` - Whether to enable intelligent rebalancing. Defaults to `true`, the default of AWS for new Express clusters.
+  (Optional) The configuration for intelligent rebalancing of the MSK cluster. Intelligent rebalancing automatically adjusts the MSK Provisioned clusters with Express brokers when the broker count changes, without any additional cost. It can be paused or resumed if needed. Only applied to the clusters with Express brokers (`express.*` broker instance types), and ignored for Standard brokers. `intelligent_rebalancing` is defined below.
+    (Optional) `enabled` - Whether to enable intelligent rebalancing. If enabled, MSK continuously monitors the cluster health and automatically distributes partitions when it detects resource imbalance or broker count changes. If disabled (paused), you need to monitor the cluster health and manually rebalance partitions when you scale the cluster. Defaults to `true`, the default of AWS for new Express clusters.
   EOF
   type = object({
     enabled = optional(bool, true)
