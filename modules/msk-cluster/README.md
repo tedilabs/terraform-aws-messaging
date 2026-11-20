@@ -95,7 +95,7 @@ This module creates following resources.
 | <a name="output_customer_action_status"></a> [customer\_action\_status](#output\_customer\_action\_status) | The status indicating whether Amazon MSK requires customer action for the cluster, such as a broker reboot or a certificate renewal. Valid values are `NONE`, `ACTION_RECOMMENDED` and `CRITICAL_ACTION_REQUIRED`. |
 | <a name="output_encryption_at_rest"></a> [encryption\_at\_rest](#output\_encryption\_at\_rest) | The configuration for encryption at rest of the Kafka cluster. |
 | <a name="output_encryption_in_transit"></a> [encryption\_in\_transit](#output\_encryption\_in\_transit) | The configuration for encryption in transit of the Kafka cluster. |
-| <a name="output_intelligent_rebalancing"></a> [intelligent\_rebalancing](#output\_intelligent\_rebalancing) | The configuration for intelligent rebalancing of the MSK cluster. `enabled` is `false` for Standard brokers. |
+| <a name="output_intelligent_rebalancing"></a> [intelligent\_rebalancing](#output\_intelligent\_rebalancing) | The configuration for intelligent rebalancing of the MSK cluster. `null` for Standard brokers, which do not support intelligent rebalancing. |
 | <a name="output_ip_address_type"></a> [ip\_address\_type](#output\_ip\_address\_type) | The type of IP addresses used by the MSK cluster. |
 | <a name="output_kafka_config"></a> [kafka\_config](#output\_kafka\_config) | The MSK configuration associated with the cluster. `null` if the cluster uses the MSK default configuration. |
 | <a name="output_kafka_version"></a> [kafka\_version](#output\_kafka\_version) | The MSK cluster version. |
@@ -108,5 +108,5 @@ This module creates following resources.
 | <a name="output_security_groups"></a> [security\_groups](#output\_security\_groups) | A list of security group IDs which is associated with the broker nodes of the MSK cluster. |
 | <a name="output_uuid"></a> [uuid](#output\_uuid) | The UUID of the MSK cluster, for use in IAM policies. |
 | <a name="output_version"></a> [version](#output\_version) | Current version of the MSK Cluster used for updates. |
-| <a name="output_zookeeper_connections"></a> [zookeeper\_connections](#output\_zookeeper\_connections) | A configuration for connecting to the Apache Zookeeper cluster.<br/>    `tcp` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster.<br/>    `tls` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster via TLS. |
+| <a name="output_zookeeper_connections"></a> [zookeeper\_connections](#output\_zookeeper\_connections) | A configuration for connecting to the Apache Zookeeper cluster. `null` for KRaft clusters, which have no ZooKeeper nodes.<br/>    `tcp` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster.<br/>    `tls` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster via TLS. |
 <!-- END_TF_DOCS -->

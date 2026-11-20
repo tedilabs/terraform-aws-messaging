@@ -118,10 +118,13 @@ output "broker_storage" {
 }
 
 output "intelligent_rebalancing" {
-  description = "The configuration for intelligent rebalancing of the MSK cluster. `enabled` is `false` for Standard brokers."
-  value = {
-    enabled = local.is_express_broker ? aws_msk_cluster.this.rebalancing[0].status == "ACTIVE" : false
-  }
+  description = "The configuration for intelligent rebalancing of the MSK cluster. `null` for Standard brokers, which do not support intelligent rebalancing."
+  value = (local.is_express_broker
+    ? {
+      enabled = aws_msk_cluster.this.rebalancing[0].status == "ACTIVE"
+    }
+    : null
+  )
 }
 
 output "cluster_storage_mode" {
@@ -267,14 +270,17 @@ output "bootstrap_brokers" {
 
 output "zookeeper_connections" {
   description = <<EOF
-  A configuration for connecting to the Apache Zookeeper cluster.
+  A configuration for connecting to the Apache Zookeeper cluster. `null` for KRaft clusters, which have no ZooKeeper nodes.
     `tcp` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster.
     `tls` - A comma separated list of one or more IP:port pairs to use to connect to the Apache Zookeeper cluster via TLS.
   EOF
-  value = {
-    tcp = aws_msk_cluster.this.zookeeper_connect_string
-    tls = aws_msk_cluster.this.zookeeper_connect_string_tls
-  }
+  value = (!local.kraft_enabled
+    ? {
+      tcp = aws_msk_cluster.this.zookeeper_connect_string
+      tls = aws_msk_cluster.this.zookeeper_connect_string_tls
+    }
+    : null
+  )
 }
 
 output "resource_group" {
