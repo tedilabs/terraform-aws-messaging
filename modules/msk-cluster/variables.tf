@@ -326,7 +326,7 @@ variable "cluster_storage_mode" {
   description = <<EOF
   (Optional) Controls storage mode for supported storage tiers. Valid values are are `LOCAL` or `TIERED`. Defaults to `LOCAL`.
     `LOCAL` - Storage mode that uses local storage for all topics.
-    `TIERED` - Storage mode that uses remote, longer-term tiered storage for certain topics at a lower cost. A remote tier automatically expands your storage capacity if necessary.
+    `TIERED` - Storage mode that uses remote, longer-term tiered storage for certain topics at a lower cost. A remote tier automatically expands your storage capacity if necessary. Not supported on Express brokers (`express.*` broker instance types).
   EOF
   type        = string
   default     = "LOCAL"
@@ -335,6 +335,11 @@ variable "cluster_storage_mode" {
   validation {
     condition     = contains(["LOCAL", "TIERED"], var.cluster_storage_mode)
     error_message = "Valid values for `cluster_storage_mode` are `LOCAL` or `TIERED`."
+  }
+
+  validation {
+    condition     = var.cluster_storage_mode != "TIERED" || !startswith(var.broker_instance_type, "express.")
+    error_message = "`TIERED` storage mode is not supported on Express brokers (`express.*` broker instance types), which manage their storage."
   }
 }
 
