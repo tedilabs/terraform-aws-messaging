@@ -19,6 +19,11 @@
   - any-glob-to-any-file:
     - modules/msk-topic/**/*
 
+":floppy_disk: msk-vpc-connection":
+- changed-files:
+  - any-glob-to-any-file:
+    - modules/msk-vpc-connection/**/*
+
 ":floppy_disk: sns-fifo-topic":
 - changed-files:
   - any-glob-to-any-file:
