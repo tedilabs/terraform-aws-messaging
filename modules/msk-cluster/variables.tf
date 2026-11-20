@@ -87,25 +87,27 @@ variable "broker_public_access_enabled" {
   nullable    = false
 
   validation {
-    condition = (!var.broker_public_access_enabled
-      || (!var.authentication.unauthenticated_access.enabled
-        && anytrue([
-          var.authentication.sasl_iam.enabled,
-          var.authentication.sasl_scram.enabled,
-          var.authentication.tls.enabled,
-        ])
-      )
-    )
-    error_message = "Public access requires `authentication.unauthenticated_access` to be disabled and at least one of `authentication.sasl_iam`, `authentication.sasl_scram` and `authentication.tls` to be enabled."
+    condition     = !var.broker_public_access_enabled || !var.authentication.unauthenticated_access.enabled
+    error_message = "Public access requires `authentication.unauthenticated_access` to be disabled."
   }
 
   validation {
-    condition = (!var.broker_public_access_enabled
-      || (var.encryption_in_transit.in_cluster_enabled
-        && var.encryption_in_transit.client_mode == "TLS"
-      )
-    )
-    error_message = "Public access requires `encryption_in_transit.in_cluster_enabled` to be `true` and `encryption_in_transit.client_mode` to be `TLS`."
+    condition = !var.broker_public_access_enabled || anytrue([
+      var.authentication.sasl_iam.enabled,
+      var.authentication.sasl_scram.enabled,
+      var.authentication.tls.enabled,
+    ])
+    error_message = "Public access requires at least one of `authentication.sasl_iam`, `authentication.sasl_scram` and `authentication.tls` to be enabled."
+  }
+
+  validation {
+    condition     = !var.broker_public_access_enabled || var.encryption_in_transit.in_cluster_enabled
+    error_message = "Public access requires `encryption_in_transit.in_cluster_enabled` to be `true`."
+  }
+
+  validation {
+    condition     = !var.broker_public_access_enabled || var.encryption_in_transit.client_mode == "TLS"
+    error_message = "Public access requires `encryption_in_transit.client_mode` to be `TLS`."
   }
 }
 
