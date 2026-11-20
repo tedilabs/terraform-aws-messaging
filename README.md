@@ -10,6 +10,7 @@ Terraform module which creates messaging related resources on AWS.
 - [eventbridge-rule](./modules/eventbridge-rule)
 - [msk-cluster](./modules/msk-cluster)
 - [msk-topic](./modules/msk-topic)
+- [msk-vpc-connection](./modules/msk-vpc-connection)
 - [sns-fifo-topic](./modules/sns-fifo-topic)
 - [sns-standard-topic](./modules/sns-standard-topic)
 
@@ -24,6 +25,7 @@ Terraform Modules from [this package](https://github.com/tedilabs/terraform-aws-
 - **AWS MSK (Managed Streaming for Apache Kafka)**
   - Cluster
   - Topic
+  - VPC Connection
 - **AWS SNS (Simple Notification Service)**
   - FIFO Topic
   - Standard Topic
@@ -36,6 +38,7 @@ Terraform Modules from [this package](https://github.com/tedilabs/terraform-aws-
 ### MSK (Managed Streaming for Apache Kafka)
 
 - [msk-topic](./examples/msk-topic)
+- [msk-vpc-connection](./examples/msk-vpc-connection)
 
 ### SNS (Simple Notification Service)
 
