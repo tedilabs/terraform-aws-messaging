@@ -76,6 +76,10 @@ data "aws_msk_configuration" "this" {
 # MSK Cluster
 ###################################################
 
+locals {
+  is_express_broker = startswith(var.broker_instance_type, "express.")
+}
+
 resource "aws_msk_cluster" "this" {
   region = var.region
 
@@ -96,13 +100,17 @@ resource "aws_msk_cluster" "this" {
       }
     }
 
-    storage_info {
-      ebs_storage_info {
-        volume_size = var.broker_storage.volume_size
+    dynamic "storage_info" {
+      for_each = local.is_express_broker ? [] : [var.broker_storage]
 
-        provisioned_throughput {
-          enabled           = var.broker_storage.provisioned_throughput.enabled
-          volume_throughput = var.broker_storage.provisioned_throughput.enabled ? var.broker_storage.provisioned_throughput.throughput : null
+      content {
+        ebs_storage_info {
+          volume_size = storage_info.value.volume_size
+
+          provisioned_throughput {
+            enabled           = storage_info.value.provisioned_throughput.enabled
+            volume_throughput = storage_info.value.provisioned_throughput.enabled ? storage_info.value.provisioned_throughput.throughput : null
+          }
         }
       }
     }
@@ -165,6 +173,16 @@ resource "aws_msk_cluster" "this" {
         bucket  = var.logging.s3.bucket
         prefix  = var.logging.s3.key_prefix
       }
+    }
+  }
+
+
+  ## Intelligent Rebalancing
+  dynamic "rebalancing" {
+    for_each = local.is_express_broker ? [var.intelligent_rebalancing] : []
+
+    content {
+      status = rebalancing.value.enabled ? "ACTIVE" : "PAUSED"
     }
   }
 

@@ -74,13 +74,23 @@ output "broker" {
 }
 
 output "broker_storage" {
-  description = "The configuration for broker storage of the MSK cluster."
-  value = {
-    volume_size = aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].volume_size
-    provisioned_throughput = {
-      enabled    = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].enabled, false)
-      throughput = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].volume_throughput, null)
+  description = "The configuration for broker storage of the MSK cluster. `null` for Express brokers, which manage their storage."
+  value = (!local.is_express_broker
+    ? {
+      volume_size = aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].volume_size
+      provisioned_throughput = {
+        enabled    = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].enabled, false)
+        throughput = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].volume_throughput, null)
+      }
     }
+    : null
+  )
+}
+
+output "intelligent_rebalancing" {
+  description = "The configuration for intelligent rebalancing of the MSK cluster. `enabled` is `false` for Standard brokers."
+  value = {
+    enabled = local.is_express_broker ? aws_msk_cluster.this.rebalancing[0].status == "ACTIVE" : false
   }
 }
 
