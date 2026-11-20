@@ -10,6 +10,8 @@ locals {
   # MSK names every KRaft version with the `.kraft` suffix (e.g. `3.9.x.kraft`, `4.1.x.kraft`).
   kraft_enabled = endswith(var.kafka_version, ".kraft")
 
+  dualstack_enabled = var.ip_address_type == "DUALSTACK"
+
   security_groups = concat(module.security_group[*].id, var.security_groups)
 
   # Sources in `default_security_group.broker_ingress_*` are allowed on each of these ports.
@@ -59,6 +61,35 @@ locals {
         port        = 9198
       },
     ],
+    # Dual-stack clusters serve IPv6 clients on separate ports. The public access shares these ports.
+    local.dualstack_enabled && contains(["PLAINTEXT", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode) ? [
+      {
+        id          = "broker-ipv6-plaintext"
+        description = "Allow to communicate with Kafka brokers in plaintext over IPv6."
+        port        = 20092
+      },
+    ] : [],
+    local.dualstack_enabled && contains(["TLS", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode) ? [
+      {
+        id          = "broker-ipv6-tls"
+        description = "Allow to communicate with Kafka brokers in tls over IPv6."
+        port        = 20094
+      },
+    ] : [],
+    local.dualstack_enabled && var.authentication.sasl_scram.enabled ? [
+      {
+        id          = "broker-ipv6-sasl-scram"
+        description = "Allow to communicate with Kafka brokers in SASL SCRAM over IPv6."
+        port        = 20096
+      },
+    ] : [],
+    local.dualstack_enabled && var.authentication.sasl_iam.enabled ? [
+      {
+        id          = "broker-ipv6-sasl-iam"
+        description = "Allow to communicate with Kafka brokers in SASL IAM over IPv6."
+        port        = 20098
+      },
+    ] : [],
   )
 
   # Sources in `default_security_group.zookeeper_ingress_*` are allowed on each of these ports.
