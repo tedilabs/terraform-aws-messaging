@@ -12,10 +12,15 @@ variable "name" {
 }
 
 variable "kafka_version" {
-  description = "(Optional) Kafka version to use for the MSK cluster. Defaults to `3.9.x`, the version recommended by AWS."
+  description = "(Optional) Kafka version to use for the MSK cluster. Use the version string of MSK, such as `3.9.x`, `3.9.x.kraft` or `4.1.x.kraft`. KRaft versions end with `.kraft`. Defaults to `3.9.x`, the version recommended by AWS."
   type        = string
   default     = "3.9.x"
   nullable    = false
+
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.([0-9]+|x)(\\.[0-9]+)?(\\.(kraft|tiered))?$", var.kafka_version))
+    error_message = "`kafka_version` must be an MSK version string such as `3.9.x`, `3.9.x.kraft` or `4.1.x.kraft`."
+  }
 }
 
 variable "default_cluster_configuration" {
