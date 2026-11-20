@@ -177,9 +177,9 @@ resource "aws_msk_cluster" "this" {
   }
 
 
-  ## Rebalancing
+  ## Intelligent Rebalancing
   dynamic "rebalancing" {
-    for_each = local.is_express_broker ? [var.rebalancing] : []
+    for_each = local.is_express_broker ? [var.intelligent_rebalancing] : []
 
     content {
       status = rebalancing.value.enabled ? "ACTIVE" : "PAUSED"
