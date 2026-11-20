@@ -92,6 +92,7 @@ output "broker" {
     `size` - The number of broker nodes in the kafka cluster.
     `instance_type` - The instance type used by the kafka brokers.
 
+    `subnets` - A list of the subnets which the broker nodes are placed in.
     `public_access_enabled` - Whether public access to MSK brokers is enabled.
   EOF
   value = {
