@@ -59,6 +59,28 @@ output "ip_address_type" {
   }[aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].network_type]
 }
 
+output "multi_vpc_connectivity" {
+  description = <<EOF
+  The configuration for multi-VPC private connectivity of the MSK cluster.
+    `enabled` - Whether the multi-VPC private connectivity configuration is managed.
+    `sasl_iam` - Whether IAM client authentication is enabled for multi-VPC private connectivity.
+    `sasl_scram` - Whether SASL/SCRAM client authentication is enabled for multi-VPC private connectivity.
+    `tls` - Whether TLS client authentication is enabled for multi-VPC private connectivity.
+  EOF
+  value = {
+    enabled = var.multi_vpc_connectivity.enabled
+    sasl_iam = {
+      enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].sasl[0].iam, false)
+    }
+    sasl_scram = {
+      enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].sasl[0].scram, false)
+    }
+    tls = {
+      enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].tls, false)
+    }
+  }
+}
+
 output "broker_nodes" {
   description = "The information of broker nodes in the kafka cluster."
   value       = data.aws_msk_broker_nodes.this.node_info_list
@@ -71,7 +93,6 @@ output "broker" {
     `instance_type` - The instance type used by the kafka brokers.
 
     `public_access_enabled` - Whether public access to MSK brokers is enabled.
-    `vpc_connectivity` - The configuration for multi-VPC private connectivity of the brokers.
   EOF
   value = {
     size          = aws_msk_cluster.this.number_of_broker_nodes
@@ -79,18 +100,6 @@ output "broker" {
 
     subnets               = aws_msk_cluster.this.broker_node_group_info[0].client_subnets
     public_access_enabled = var.broker_public_access_enabled
-    vpc_connectivity = {
-      enabled = var.broker_vpc_connectivity.enabled
-      sasl_iam = {
-        enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].sasl[0].iam, false)
-      }
-      sasl_scram = {
-        enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].sasl[0].scram, false)
-      }
-      tls = {
-        enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].tls, false)
-      }
-    }
   }
 }
 

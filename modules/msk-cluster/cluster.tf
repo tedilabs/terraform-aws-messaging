@@ -106,7 +106,7 @@ resource "aws_msk_cluster" "this" {
       }
 
       dynamic "vpc_connectivity" {
-        for_each = var.broker_vpc_connectivity.enabled ? [var.broker_vpc_connectivity] : []
+        for_each = var.multi_vpc_connectivity.enabled ? [var.multi_vpc_connectivity] : []
 
         content {
           client_authentication {
