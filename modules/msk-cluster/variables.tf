@@ -139,10 +139,14 @@ variable "default_security_group" {
       (Optional) `prefix_lists` - The prefix list IDs to allow.
       (Optional) `security_groups` - The source security group IDs to allow.
       (Optional) `self` - Whether the security group itself will be added as a source to this egress rule.
-    (Optional) `broker_ingress_ipv4_cidrs` - A list of IPv4 CIDR ranges to allow on the Kafka broker and ZooKeeper ports that the cluster uses. Defaults to `[]`.
-    (Optional) `broker_ingress_ipv6_cidrs` - A list of IPv6 CIDR ranges to allow on the Kafka broker and ZooKeeper ports that the cluster uses. Defaults to `[]`.
-    (Optional) `broker_ingress_prefix_lists` - A list of prefix list IDs to allow on the Kafka broker and ZooKeeper ports that the cluster uses. Defaults to `[]`.
-    (Optional) `broker_ingress_security_groups` - A list of security group IDs to allow on the Kafka broker and ZooKeeper ports that the cluster uses. Defaults to `[]`.
+    (Optional) `broker_ingress_ipv4_cidrs` - A list of IPv4 CIDR ranges to allow on the Kafka broker ports that the cluster uses. Defaults to `[]`.
+    (Optional) `broker_ingress_ipv6_cidrs` - A list of IPv6 CIDR ranges to allow on the Kafka broker ports that the cluster uses. Defaults to `[]`.
+    (Optional) `broker_ingress_prefix_lists` - A list of prefix list IDs to allow on the Kafka broker ports that the cluster uses. Defaults to `[]`.
+    (Optional) `broker_ingress_security_groups` - A list of security group IDs to allow on the Kafka broker ports that the cluster uses. Defaults to `[]`.
+    (Optional) `zookeeper_ingress_ipv4_cidrs` - A list of IPv4 CIDR ranges to allow on the ZooKeeper ports. Only applied to the ZooKeeper-based clusters, and ignored for KRaft clusters. Defaults to `[]`.
+    (Optional) `zookeeper_ingress_ipv6_cidrs` - A list of IPv6 CIDR ranges to allow on the ZooKeeper ports. MSK serves ZooKeeper over IPv4 only, so this takes effect only when MSK adds IPv6 support for ZooKeeper. Only applied to the ZooKeeper-based clusters, and ignored for KRaft clusters. Defaults to `[]`.
+    (Optional) `zookeeper_ingress_prefix_lists` - A list of prefix list IDs to allow on the ZooKeeper ports. Only applied to the ZooKeeper-based clusters, and ignored for KRaft clusters. Defaults to `[]`.
+    (Optional) `zookeeper_ingress_security_groups` - A list of security group IDs to allow on the ZooKeeper ports. Only applied to the ZooKeeper-based clusters, and ignored for KRaft clusters. Defaults to `[]`.
     (Optional) `prometheus_ingress_ipv4_cidrs` - A list of IPv4 CIDR ranges to allow on the enabled Prometheus exporter ports. Defaults to `[]`.
     (Optional) `prometheus_ingress_ipv6_cidrs` - A list of IPv6 CIDR ranges to allow on the enabled Prometheus exporter ports. Defaults to `[]`.
     (Optional) `prometheus_ingress_prefix_lists` - A list of prefix list IDs to allow on the enabled Prometheus exporter ports. Defaults to `[]`.
@@ -186,6 +190,10 @@ variable "default_security_group" {
     broker_ingress_ipv6_cidrs          = optional(list(string), [])
     broker_ingress_prefix_lists        = optional(list(string), [])
     broker_ingress_security_groups     = optional(list(string), [])
+    zookeeper_ingress_ipv4_cidrs       = optional(list(string), [])
+    zookeeper_ingress_ipv6_cidrs       = optional(list(string), [])
+    zookeeper_ingress_prefix_lists     = optional(list(string), [])
+    zookeeper_ingress_security_groups  = optional(list(string), [])
     prometheus_ingress_ipv4_cidrs      = optional(list(string), [])
     prometheus_ingress_ipv6_cidrs      = optional(list(string), [])
     prometheus_ingress_prefix_lists    = optional(list(string), [])
