@@ -77,8 +77,7 @@ data "aws_msk_configuration" "this" {
 ###################################################
 
 locals {
-  # MSK names every Express broker type with the `express.` prefix (e.g. `express.m7g.large`).
-  express_enabled = startswith(var.broker_instance_type, "express.")
+  is_express_broker = startswith(var.broker_instance_type, "express.")
 }
 
 resource "aws_msk_cluster" "this" {
@@ -101,9 +100,8 @@ resource "aws_msk_cluster" "this" {
       }
     }
 
-    # Express brokers manage their storage, so `storage_info` must not be set.
     dynamic "storage_info" {
-      for_each = local.express_enabled ? [] : [var.broker_storage]
+      for_each = local.is_express_broker ? [] : [var.broker_storage]
 
       content {
         ebs_storage_info {
@@ -181,7 +179,7 @@ resource "aws_msk_cluster" "this" {
 
   ## Rebalancing
   dynamic "rebalancing" {
-    for_each = local.express_enabled ? [var.rebalancing] : []
+    for_each = local.is_express_broker ? [var.rebalancing] : []
 
     content {
       status = rebalancing.value.enabled ? "ACTIVE" : "PAUSED"
