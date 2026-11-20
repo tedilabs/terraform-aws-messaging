@@ -14,16 +14,25 @@ locals {
 
   security_groups = concat(module.security_group[*].id, var.security_groups)
 
+  # Listeners that the brokers serve with the current client-broker encryption and authentication settings.
+  # The TLS listener serves mTLS or unauthenticated clients only. SASL clients use their own listeners.
+  plaintext_listener_enabled = contains(["PLAINTEXT", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode)
+  tls_listener_enabled = (contains(["TLS", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode)
+    && (var.authentication.unauthenticated_access.enabled || var.authentication.tls.enabled)
+  )
+  # Public access requires unauthenticated access to be disabled, so its TLS listener serves mTLS clients only.
+  public_tls_listener_enabled = var.broker_public_access_enabled && var.authentication.tls.enabled
+
   # Sources in `default_security_group.broker_ingress_*` are allowed on each of these ports.
   broker_ports = concat(
-    contains(["PLAINTEXT", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode) ? [
+    local.plaintext_listener_enabled ? [
       {
         id          = "broker-plaintext"
         description = "Allow to communicate with Kafka brokers in plaintext."
         port        = 9092
       },
     ] : [],
-    contains(["TLS", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode) ? [
+    local.tls_listener_enabled ? [
       {
         id          = "broker-tls"
         description = "Allow to communicate with Kafka brokers in tls."
@@ -44,32 +53,36 @@ locals {
         port        = 9098
       },
     ] : [],
-    [
+    local.public_tls_listener_enabled ? [
       {
         id          = "broker-public-tls"
         description = "Allow to communicate with Kafka brokers in tls (public)."
         port        = 9194
       },
+    ] : [],
+    var.broker_public_access_enabled && var.authentication.sasl_scram.enabled ? [
       {
         id          = "broker-public-sasl-scram"
         description = "Allow to communicate with Kafka brokers in SASL SCRAM (public)."
         port        = 9196
       },
+    ] : [],
+    var.broker_public_access_enabled && var.authentication.sasl_iam.enabled ? [
       {
         id          = "broker-public-sasl-iam"
         description = "Allow to communicate with Kafka brokers in SASL IAM (public)."
         port        = 9198
       },
-    ],
+    ] : [],
     # Dual-stack clusters serve IPv6 clients on separate ports. The public access shares these ports.
-    local.dualstack_enabled && contains(["PLAINTEXT", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode) ? [
+    local.dualstack_enabled && local.plaintext_listener_enabled ? [
       {
         id          = "broker-ipv6-plaintext"
         description = "Allow to communicate with Kafka brokers in plaintext over IPv6."
         port        = 20092
       },
     ] : [],
-    local.dualstack_enabled && contains(["TLS", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode) ? [
+    local.dualstack_enabled && local.tls_listener_enabled ? [
       {
         id          = "broker-ipv6-tls"
         description = "Allow to communicate with Kafka brokers in tls over IPv6."
