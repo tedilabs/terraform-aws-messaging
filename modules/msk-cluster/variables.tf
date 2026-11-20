@@ -64,12 +64,26 @@ variable "cluster_configuration" {
   }
 }
 
-# TODO: naming
-# TODO: validation
 variable "broker_size" {
-  description = "(Required) The desired total number of broker nodes in the kafka cluster. It must be a multiple of the number of specified client subnets."
+  description = "(Required) The desired total number of broker nodes in the kafka cluster. It must be a multiple of the number of subnets in `broker_subnets`, because MSK places the same number of brokers in each subnet."
   type        = number
   nullable    = false
+
+  validation {
+    condition     = floor(var.broker_size) == var.broker_size
+    error_message = "`broker_size` must be a whole number."
+  }
+  validation {
+    condition     = var.broker_size >= 1
+    error_message = "`broker_size` must be greater than or equal to `1`."
+  }
+  validation {
+    condition = (length(var.broker_subnets) > 0
+      ? var.broker_size % length(var.broker_subnets) == 0
+      : true
+    )
+    error_message = "`broker_size` must be a multiple of the number of subnets in `broker_subnets`."
+  }
 }
 
 variable "broker_instance_type" {
