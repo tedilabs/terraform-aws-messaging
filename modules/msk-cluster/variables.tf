@@ -116,6 +116,7 @@ variable "ip_address_type" {
   (Optional) The type of IP addresses used by the MSK cluster. Valid values are `IPv4` and `DUALSTACK`. Only updating from `IPv4` to `DUALSTACK` is allowed. Defaults to `IPv4`.
     `IPv4` - The brokers are reachable over IPv4 only.
     `DUALSTACK` - The brokers are reachable over both IPv4 and IPv6. The subnets of the brokers must have IPv6 CIDR blocks.
+  With `DUALSTACK`, IPv6 clients connect to the brokers on separate ports (`20092`, `20094`, `20096`, `20098`), and the default security group allows the sources in `default_security_group.broker_ingress_*` on them. ZooKeeper nodes are reachable over IPv4 only.
   EOF
   type        = string
   default     = "IPv4"
