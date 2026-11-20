@@ -59,6 +59,10 @@ locals {
         port        = 9198
       },
     ],
+  )
+
+  # Sources in `default_security_group.zookeeper_ingress_*` are allowed on each of these ports.
+  zookeeper_ports = concat(
     # KRaft clusters have no ZooKeeper nodes.
     !local.kraft_enabled ? [
       {
@@ -133,6 +137,26 @@ module "security_group" {
         length(var.default_security_group.broker_ingress_ipv6_cidrs) > 0,
         length(var.default_security_group.broker_ingress_prefix_lists) > 0,
         length(var.default_security_group.broker_ingress_security_groups) > 0,
+      ])
+    ],
+    [
+      for port in local.zookeeper_ports : {
+        id          = port.id
+        description = port.description
+        protocol    = "tcp"
+        from_port   = port.port
+        to_port     = port.port
+
+        ipv4_cidrs      = var.default_security_group.zookeeper_ingress_ipv4_cidrs
+        ipv6_cidrs      = var.default_security_group.zookeeper_ingress_ipv6_cidrs
+        prefix_lists    = var.default_security_group.zookeeper_ingress_prefix_lists
+        security_groups = var.default_security_group.zookeeper_ingress_security_groups
+      }
+      if anytrue([
+        length(var.default_security_group.zookeeper_ingress_ipv4_cidrs) > 0,
+        length(var.default_security_group.zookeeper_ingress_ipv6_cidrs) > 0,
+        length(var.default_security_group.zookeeper_ingress_prefix_lists) > 0,
+        length(var.default_security_group.zookeeper_ingress_security_groups) > 0,
       ])
     ],
     [
