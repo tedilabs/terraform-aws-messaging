@@ -128,7 +128,7 @@ variable "ip_address_type" {
   description = <<EOF
   (Optional) The type of IP addresses used by the MSK cluster. Valid values are `IPv4` and `DUALSTACK`. Only updating from `IPv4` to `DUALSTACK` is allowed. Defaults to `IPv4`.
     `IPv4` - The brokers are reachable over IPv4 only.
-    `DUALSTACK` - The brokers are reachable over both IPv4 and IPv6. The subnets of the brokers must have IPv6 CIDR blocks.
+    `DUALSTACK` - The brokers are reachable over both IPv4 and IPv6. The subnets of the brokers must have IPv6 CIDR blocks. Not supported on the `kafka.t3.small` broker instance type.
   With `DUALSTACK`, IPv6 clients connect to the brokers on separate ports (`20092`, `20094`, `20096`, `20098`), and the default security group allows the sources in `default_security_group.broker_ingress_*` on them. ZooKeeper nodes are reachable over IPv4 only.
   EOF
   type        = string
@@ -139,11 +139,16 @@ variable "ip_address_type" {
     condition     = contains(["IPv4", "DUALSTACK"], var.ip_address_type)
     error_message = "Valid values for `ip_address_type` are `IPv4` and `DUALSTACK`."
   }
+
+  validation {
+    condition     = var.ip_address_type != "DUALSTACK" || var.broker_instance_type != "kafka.t3.small"
+    error_message = "`DUALSTACK` is not supported on the `kafka.t3.small` broker instance type."
+  }
 }
 
 variable "multi_vpc_connectivity" {
   description = <<EOF
-  (Optional) The configuration for multi-VPC private connectivity (powered by AWS PrivateLink) of the MSK cluster. Clients in other VPCs or AWS accounts connect to the brokers through AWS PrivateLink without VPC peering. Multi-VPC private connectivity can only be turned on for an existing cluster, and each client authentication type must also be enabled on the cluster via `authentication`. `multi_vpc_connectivity` is defined below.
+  (Optional) The configuration for multi-VPC private connectivity (powered by AWS PrivateLink) of the MSK cluster. Clients in other VPCs or AWS accounts connect to the brokers through AWS PrivateLink without VPC peering. Multi-VPC private connectivity can only be turned on for an existing cluster, is not supported on the `kafka.t3.small` broker instance type, and each client authentication type must also be enabled on the cluster via `authentication`. `multi_vpc_connectivity` is defined below.
     (Optional) `enabled` - Whether to manage the multi-VPC private connectivity configuration of the cluster. Defaults to `false`.
     (Optional) `sasl_iam` - The configuration for IAM client authentication for multi-VPC private connectivity. `sasl_iam` is defined below.
       (Optional) `enabled` - Whether to enable IAM client authentication. Defaults to `false`.
@@ -174,6 +179,11 @@ variable "multi_vpc_connectivity" {
       !var.multi_vpc_connectivity.tls.enabled || var.authentication.tls.enabled,
     ])
     error_message = "Each client authentication type of `multi_vpc_connectivity` must also be enabled on the cluster via `authentication`."
+  }
+
+  validation {
+    condition     = !var.multi_vpc_connectivity.enabled || var.broker_instance_type != "kafka.t3.small"
+    error_message = "Multi-VPC private connectivity is not supported on the `kafka.t3.small` broker instance type."
   }
 }
 
