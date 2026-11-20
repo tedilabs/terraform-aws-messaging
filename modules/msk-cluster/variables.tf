@@ -294,7 +294,7 @@ variable "broker_storage" {
       (Optional) `enabled` - Whether provisioned throughput is enabled or not. You can specify the provisioned throughput rate in MiB per second for clusters whose brokers are of type `kafka.m5.4xlarge` or larger and if the storage volume is 10 GiB or greater. Defaults to `false`.
       (Optional) `throughput` - Throughput value of the EBS volumes for the data drive on each kafka broker node in MiB per second. The minimum value is `250`. The maximum value varies between broker type.
     (Optional) `autoscaling` - The configuration for automatic scaling of the broker storage with Application Auto Scaling. MSK grows the storage of every broker by the larger of 10 GiB or 10% of the current size when the `KafkaBrokerStorageUtilization` metric reaches the target. The storage never shrinks, and a scaling action can occur only once every six hours. `autoscaling` is defined below.
-      (Optional) `enabled` - Whether to enable automatic scaling of the broker storage. Defaults to `false`.
+      (Optional) `enabled` - Whether to enable automatic scaling of the broker storage. Not supported on Express brokers (`express.*` broker instance types). Defaults to `false`.
       (Optional) `max_volume_size` - The maximum size in GiB that automatic scaling can grow the storage of each broker to. Must be between `volume_size` and `16384`. Required if `enabled` is `true`.
       (Optional) `target_utilization` - The storage utilization in percent that triggers a scaling action. Valid values are between `10` and `80`. AWS recommends between `50` and `60`. Defaults to `60`.
   EOF
@@ -351,6 +351,10 @@ variable "broker_storage" {
       var.broker_storage.autoscaling.target_utilization <= 80,
     ])
     error_message = "Valid value for `autoscaling.target_utilization` is between `10` and `80`."
+  }
+  validation {
+    condition     = !var.broker_storage.autoscaling.enabled || !startswith(var.broker_instance_type, "express.")
+    error_message = "`autoscaling` is not supported on Express brokers (`express.*` broker instance types), which manage their storage."
   }
 }
 

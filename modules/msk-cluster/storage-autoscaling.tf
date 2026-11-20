@@ -2,12 +2,8 @@
 # Storage Autoscaling for MSK Cluster
 ###################################################
 
-locals {
-  storage_autoscaling_enabled = !local.is_express_broker && var.broker_storage.autoscaling.enabled
-}
-
 resource "aws_appautoscaling_target" "storage" {
-  count = local.storage_autoscaling_enabled ? 1 : 0
+  count = var.broker_storage.autoscaling.enabled ? 1 : 0
 
   region = var.region
 
@@ -29,7 +25,7 @@ resource "aws_appautoscaling_target" "storage" {
 }
 
 resource "aws_appautoscaling_policy" "storage" {
-  count = local.storage_autoscaling_enabled ? 1 : 0
+  count = var.broker_storage.autoscaling.enabled ? 1 : 0
 
   region = var.region
 
