@@ -90,7 +90,7 @@ output "broker_storage" {
 output "intelligent_rebalancing" {
   description = "The configuration for intelligent rebalancing of the MSK cluster. `enabled` is `false` for Standard brokers."
   value = {
-    enabled = try(aws_msk_cluster.this.rebalancing[0].status == "ACTIVE", false)
+    enabled = local.is_express_broker ? aws_msk_cluster.this.rebalancing[0].status == "ACTIVE" : false
   }
 }
 
