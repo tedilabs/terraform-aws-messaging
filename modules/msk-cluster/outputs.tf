@@ -104,13 +104,23 @@ output "broker" {
 }
 
 output "broker_storage" {
-  description = "The configuration for broker storage of the MSK cluster. `null` for Express brokers, which manage their storage."
+  description = <<EOF
+  The configuration for broker storage of the MSK cluster. `null` for Express brokers, which manage their storage.
+    `volume_size` - The current size in GiB of the EBS volume for each broker, including the growth by automatic scaling.
+    `provisioned_throughput` - The configuration for provisioned throughput of the EBS volume.
+    `autoscaling` - The configuration for automatic scaling of the broker storage.
+  EOF
   value = (!local.is_express_broker
     ? {
       volume_size = aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].volume_size
       provisioned_throughput = {
         enabled    = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].enabled, false)
         throughput = try(aws_msk_cluster.this.broker_node_group_info[0].storage_info[0].ebs_storage_info[0].provisioned_throughput[0].volume_throughput, null)
+      }
+      autoscaling = {
+        enabled            = var.broker_storage.autoscaling.enabled
+        max_volume_size    = one(aws_appautoscaling_target.storage[*].max_capacity)
+        target_utilization = one(aws_appautoscaling_policy.storage[*].target_tracking_scaling_policy_configuration[0].target_value)
       }
     }
     : null

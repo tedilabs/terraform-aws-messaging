@@ -235,6 +235,13 @@ resource "aws_msk_cluster" "this" {
     local.module_tags,
     var.tags,
   )
+
+  lifecycle {
+    # Storage autoscaling grows the broker storage outside Terraform, and MSK can not shrink it.
+    ignore_changes = [
+      broker_node_group_info[0].storage_info[0].ebs_storage_info[0].volume_size,
+    ]
+  }
 }
 
 data "aws_msk_broker_nodes" "this" {

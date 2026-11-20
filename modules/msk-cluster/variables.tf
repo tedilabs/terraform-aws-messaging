@@ -289,16 +289,25 @@ variable "security_groups" {
 variable "broker_storage" {
   description = <<EOF
   (Optional) The configuration for broker storage of the MSK cluster. Ignored for Express brokers (`express.*` broker instance types), which manage their storage. `broker_storage` is defined below.
-    (Optional) `volume_size` - The size in GiB of the EBS volume for the data drive on each broker node. Minimum value of `1` and maximum value of `16384`. Defaults to `1000`.
+    (Optional) `volume_size` - The initial size in GiB of the EBS volume for the data drive on each broker node. Minimum value of `1` and maximum value of `16384`. Defaults to `1000`. Only applied when the cluster is created; later changes are ignored so that Terraform does not revert the storage grown by `autoscaling`. Use `autoscaling` to grow the storage, or scale it up manually with the MSK console or the `UpdateBrokerStorage` API.
     (Optional) `provisioned_throughput` - The configuration for provisioned throughput of the EBS volume. `provisioned_throughput` is defined below.
       (Optional) `enabled` - Whether provisioned throughput is enabled or not. You can specify the provisioned throughput rate in MiB per second for clusters whose brokers are of type `kafka.m5.4xlarge` or larger and if the storage volume is 10 GiB or greater. Defaults to `false`.
       (Optional) `throughput` - Throughput value of the EBS volumes for the data drive on each kafka broker node in MiB per second. The minimum value is `250`. The maximum value varies between broker type.
+    (Optional) `autoscaling` - The configuration for automatic scaling of the broker storage with Application Auto Scaling. MSK grows the storage of every broker by the larger of 10 GiB or 10% of the current size when the `KafkaBrokerStorageUtilization` metric reaches the target. The storage never shrinks, and a scaling action can occur only once every six hours. `autoscaling` is defined below.
+      (Optional) `enabled` - Whether to enable automatic scaling of the broker storage. Not supported on Express brokers (`express.*` broker instance types). Defaults to `false`.
+      (Optional) `max_volume_size` - The maximum size in GiB that automatic scaling can grow the storage of each broker to. Must be between `volume_size` and `16384`. Required if `enabled` is `true`.
+      (Optional) `target_utilization` - The storage utilization in percent that triggers a scaling action. Valid values are between `10` and `80`. AWS recommends between `50` and `60`. Defaults to `60`.
   EOF
   type = object({
     volume_size = optional(number, 1000)
     provisioned_throughput = optional(object({
       enabled    = optional(bool, false)
       throughput = optional(number)
+    }), {})
+    autoscaling = optional(object({
+      enabled            = optional(bool, false)
+      max_volume_size    = optional(number)
+      target_utilization = optional(number, 60)
     }), {})
   })
   default  = {}
@@ -317,6 +326,35 @@ variable "broker_storage" {
       var.broker_storage.provisioned_throughput.enabled == true && var.broker_storage.provisioned_throughput.throughput >= 250,
     ])
     error_message = "Valid value for `throughput` is greater than `250`."
+  }
+  validation {
+    condition     = !var.broker_storage.autoscaling.enabled || var.broker_storage.autoscaling.max_volume_size != null
+    error_message = "`autoscaling.max_volume_size` is required when `autoscaling.enabled` is `true`."
+  }
+  validation {
+    condition = (var.broker_storage.autoscaling.enabled && var.broker_storage.autoscaling.max_volume_size != null
+      ? var.broker_storage.autoscaling.max_volume_size >= var.broker_storage.volume_size
+      : true
+    )
+    error_message = "`autoscaling.max_volume_size` must be greater than or equal to `volume_size`."
+  }
+  validation {
+    condition = (var.broker_storage.autoscaling.enabled && var.broker_storage.autoscaling.max_volume_size != null
+      ? var.broker_storage.autoscaling.max_volume_size <= 16384
+      : true
+    )
+    error_message = "`autoscaling.max_volume_size` must be less than or equal to `16384`."
+  }
+  validation {
+    condition = alltrue([
+      var.broker_storage.autoscaling.target_utilization >= 10,
+      var.broker_storage.autoscaling.target_utilization <= 80,
+    ])
+    error_message = "Valid value for `autoscaling.target_utilization` is between `10` and `80`."
+  }
+  validation {
+    condition     = !var.broker_storage.autoscaling.enabled || !startswith(var.broker_instance_type, "express.")
+    error_message = "`autoscaling` is not supported on Express brokers (`express.*` broker instance types), which manage their storage."
   }
 }
 
