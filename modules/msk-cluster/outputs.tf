@@ -51,6 +51,36 @@ output "security_groups" {
   value       = aws_msk_cluster.this.broker_node_group_info[0].security_groups
 }
 
+output "ip_address_type" {
+  description = "The type of IP addresses used by the MSK cluster."
+  value = {
+    for k, v in local.ip_address_types :
+    v => k
+  }[aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].network_type]
+}
+
+output "multi_vpc_connectivity" {
+  description = <<EOF
+  The configuration for multi-VPC private connectivity of the MSK cluster.
+    `enabled` - Whether the multi-VPC private connectivity configuration is managed.
+    `sasl_iam` - Whether IAM client authentication is enabled for multi-VPC private connectivity.
+    `sasl_scram` - Whether SASL/SCRAM client authentication is enabled for multi-VPC private connectivity.
+    `tls` - Whether TLS client authentication is enabled for multi-VPC private connectivity.
+  EOF
+  value = {
+    enabled = var.multi_vpc_connectivity.enabled
+    sasl_iam = {
+      enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].sasl[0].iam, false)
+    }
+    sasl_scram = {
+      enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].sasl[0].scram, false)
+    }
+    tls = {
+      enabled = try(aws_msk_cluster.this.broker_node_group_info[0].connectivity_info[0].vpc_connectivity[0].client_authentication[0].tls, false)
+    }
+  }
+}
+
 output "broker_nodes" {
   description = "The information of broker nodes in the kafka cluster."
   value       = data.aws_msk_broker_nodes.this.node_info_list
@@ -223,6 +253,22 @@ output "bootstrap_brokers_for_vpc_connectivity" {
     sasl_iam   = aws_msk_cluster.this.bootstrap_brokers_vpc_connectivity_sasl_iam
     sasl_scram = aws_msk_cluster.this.bootstrap_brokers_vpc_connectivity_sasl_scram
     tls        = aws_msk_cluster.this.bootstrap_brokers_vpc_connectivity_tls
+  }
+}
+
+output "bootstrap_brokers_for_ipv6" {
+  description = <<EOF
+  The information to bootstrap connectivity to the Kafka cluster over IPv6. Only contains values if `ip_address_type` is `DUALSTACK`.
+    `plaintext` - A comma separated list of one or more hostname:port pairs of kafka brokers suitable to boostrap connectivity to the kafka cluster over IPv6. Only contains value if `client_encryption_in_transit_mode` is set to PLAINTEXT or TLS_PLAINTEXT. AWS may not always return all endpoints so the values may not be stable across applies.
+    `sasl_iam` - A comma separated list of one or more DNS names (or IPs) and SASL IAM port pairs over IPv6. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS. AWS may not always return all endpoints so the values may not be stable across applies.
+    `sasl_scram` - A comma separated list of one or more DNS names (or IPs) and SASL SCRAM port pairs over IPv6. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS. AWS may not always return all endpoints so the values may not be stable across applies.
+    `tls` - A comma separated list of one or more DNS names (or IPs) and TLS port pairs kafka brokers suitable to boostrap connectivity to the kafka cluster over IPv6. Only contains value if `client_encryption_in_transit_mode` is set to TLS_PLAINTEXT or TLS. AWS may not always return all endpoints so the values may not be stable across applies.
+  EOF
+  value = {
+    plaintext  = aws_msk_cluster.this.bootstrap_brokers_ipv6
+    sasl_iam   = aws_msk_cluster.this.bootstrap_brokers_sasl_iam_ipv6
+    sasl_scram = aws_msk_cluster.this.bootstrap_brokers_sasl_scram_ipv6
+    tls        = aws_msk_cluster.this.bootstrap_brokers_tls_ipv6
   }
 }
 
