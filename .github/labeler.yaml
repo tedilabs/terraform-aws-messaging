@@ -14,6 +14,11 @@
   - any-glob-to-any-file:
     - modules/msk-cluster/**/*
 
+":floppy_disk: msk-topic":
+- changed-files:
+  - any-glob-to-any-file:
+    - modules/msk-topic/**/*
+
 ":floppy_disk: sns-fifo-topic":
 - changed-files:
   - any-glob-to-any-file:
