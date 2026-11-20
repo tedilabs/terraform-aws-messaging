@@ -67,6 +67,14 @@ locals {
         port        = 2181
       },
     ] : [],
+    # ZooKeeper TLS endpoints are available only when TLS is enabled for client-broker encryption.
+    !local.kraft_enabled && contains(["TLS", "TLS_PLAINTEXT"], var.encryption_in_transit.client_mode) ? [
+      {
+        id          = "zookeeper-tls"
+        description = "Allow to communicate with Kafka zookeepers in tls."
+        port        = 2182
+      },
+    ] : [],
   )
 
   # Sources in `default_security_group.prometheus_ingress_*` are allowed on each of these ports.
