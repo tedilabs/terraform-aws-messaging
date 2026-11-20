@@ -22,7 +22,7 @@ variable "default_cluster_configuration" {
   description = <<EOF
   (Optional) The configuration of the default MSK configuration for the cluster. Use `cluster_configuration` if `default_cluster_configuration.enabled` is `false`. `default_cluster_configuration` as defined below.
     (Optional) `enabled` - Whether to create and use the default MSK configuration managed by this module. Defaults to `true`.
-    (Optional) `name` - The name of the default MSK configuration. If not provided, the cluster name is used.
+    (Optional) `name` - The name of the default MSK configuration. Defaults to `{name}-{kafka_version}` with dots in the Kafka version replaced by hyphens (e.g. `my-cluster-3-9-x-kraft`). The Kafka version is part of the default name because changing `kafka_version` replaces the MSK configuration, and the replacement is created before the old one is deleted. If you set a fixed name, change it together with `kafka_version` to avoid a name conflict.
     (Optional) `description` - The description of the default MSK configuration. Defaults to `Managed by Terraform.`.
     (Optional) `server_properties` - The key/value set for the contents of the `server.properties` file. Each key is the name of the Kafka property. Each value is the value of the Kafka property. Defaults to `{}`.
   EOF
@@ -34,6 +34,14 @@ variable "default_cluster_configuration" {
   })
   default  = {}
   nullable = false
+
+  validation {
+    condition = (var.default_cluster_configuration.name != null
+      ? can(regex("^[0-9A-Za-z][0-9A-Za-z-]*$", var.default_cluster_configuration.name))
+      : true
+    )
+    error_message = "`default_cluster_configuration.name` must start with a letter or digit and contain only letters, digits and hyphens."
+  }
 }
 
 variable "cluster_configuration" {

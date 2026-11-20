@@ -50,7 +50,7 @@ resource "aws_msk_configuration" "this" {
 
   region = var.region
 
-  name           = coalesce(var.default_cluster_configuration.name, var.name)
+  name           = coalesce(var.default_cluster_configuration.name, "${var.name}-${replace(var.kafka_version, ".", "-")}")
   description    = var.default_cluster_configuration.description
   kafka_versions = [var.kafka_version]
 
