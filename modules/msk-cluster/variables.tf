@@ -328,13 +328,22 @@ variable "broker_storage" {
     error_message = "Valid value for `throughput` is greater than `250`."
   }
   validation {
-    condition = (!var.broker_storage.autoscaling.enabled
-      || (var.broker_storage.autoscaling.max_volume_size != null
-        ? var.broker_storage.autoscaling.max_volume_size >= var.broker_storage.volume_size && var.broker_storage.autoscaling.max_volume_size <= 16384
-        : false
-      )
+    condition     = !var.broker_storage.autoscaling.enabled || var.broker_storage.autoscaling.max_volume_size != null
+    error_message = "`autoscaling.max_volume_size` is required when `autoscaling.enabled` is `true`."
+  }
+  validation {
+    condition = (var.broker_storage.autoscaling.enabled && var.broker_storage.autoscaling.max_volume_size != null
+      ? var.broker_storage.autoscaling.max_volume_size >= var.broker_storage.volume_size
+      : true
     )
-    error_message = "`autoscaling.max_volume_size` is required when `autoscaling.enabled` is `true`, and must be between `volume_size` and `16384`."
+    error_message = "`autoscaling.max_volume_size` must be greater than or equal to `volume_size`."
+  }
+  validation {
+    condition = (var.broker_storage.autoscaling.enabled && var.broker_storage.autoscaling.max_volume_size != null
+      ? var.broker_storage.autoscaling.max_volume_size <= 16384
+      : true
+    )
+    error_message = "`autoscaling.max_volume_size` must be less than or equal to `16384`."
   }
   validation {
     condition = alltrue([
