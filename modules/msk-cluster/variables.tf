@@ -111,19 +111,19 @@ variable "broker_public_access_enabled" {
   }
 }
 
-variable "broker_network_type" {
+variable "ip_address_type" {
   description = <<EOF
-  (Optional) The network type of the MSK cluster brokers. Valid values are `IPV4` and `DUAL`. Only updating from `IPV4` to `DUAL` is allowed. Defaults to `IPV4`.
-    `IPV4` - The brokers are reachable over IPv4 only.
-    `DUAL` - The brokers are reachable over both IPv4 and IPv6 (dual-stack). The subnets of the brokers must have IPv6 CIDR blocks.
+  (Optional) The type of IP addresses used by the MSK cluster. Valid values are `IPv4` and `DUALSTACK`. Only updating from `IPv4` to `DUALSTACK` is allowed. Defaults to `IPv4`.
+    `IPv4` - The brokers are reachable over IPv4 only.
+    `DUALSTACK` - The brokers are reachable over both IPv4 and IPv6. The subnets of the brokers must have IPv6 CIDR blocks.
   EOF
   type        = string
-  default     = "IPV4"
+  default     = "IPv4"
   nullable    = false
 
   validation {
-    condition     = contains(["IPV4", "DUAL"], var.broker_network_type)
-    error_message = "Valid values for `broker_network_type` are `IPV4` and `DUAL`."
+    condition     = contains(["IPv4", "DUALSTACK"], var.ip_address_type)
+    error_message = "Valid values for `ip_address_type` are `IPv4` and `DUALSTACK`."
   }
 }
 

@@ -78,6 +78,11 @@ data "aws_msk_configuration" "this" {
 
 locals {
   is_express_broker = startswith(var.broker_instance_type, "express.")
+
+  ip_address_types = {
+    "IPv4"      = "IPV4"
+    "DUALSTACK" = "DUAL"
+  }
 }
 
 resource "aws_msk_cluster" "this" {
@@ -94,7 +99,7 @@ resource "aws_msk_cluster" "this" {
     security_groups = local.security_groups
 
     connectivity_info {
-      network_type = var.broker_network_type
+      network_type = local.ip_address_types[var.ip_address_type]
 
       public_access {
         type = var.broker_public_access_enabled ? "SERVICE_PROVIDED_EIPS" : "DISABLED"
