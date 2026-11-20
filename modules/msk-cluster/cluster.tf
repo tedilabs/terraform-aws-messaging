@@ -90,7 +90,6 @@ resource "aws_msk_cluster" "this" {
     security_groups = local.security_groups
 
     # TODO: `vpc_connectivity`
-    # TODO: public access cidrs
     connectivity_info {
       public_access {
         type = var.broker_public_access_enabled ? "SERVICE_PROVIDED_EIPS" : "DISABLED"

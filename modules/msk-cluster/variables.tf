@@ -73,10 +73,40 @@ variable "broker_subnets" {
 }
 
 variable "broker_public_access_enabled" {
-  description = "(Optional) Whether to allow public access to MSK brokers."
+  description = <<EOF
+  (Optional) Whether to allow public access to MSK brokers. Defaults to `false`. Public access cannot be turned on while creating a cluster; create the cluster first, then turn it on with an update. The cluster must meet the following conditions:
+    - The subnets of the brokers must be public subnets.
+    - `authentication.unauthenticated_access` must be disabled, and at least one of `authentication.sasl_iam`, `authentication.sasl_scram` and `authentication.tls` must be enabled.
+    - `encryption_in_transit.in_cluster_enabled` must be `true`. It cannot be turned on for a cluster created with it turned off.
+    - `encryption_in_transit.client_mode` must be `TLS`.
+    - With SASL/SCRAM or mTLS, Apache Kafka ACLs must be set and `allow.everyone.if.no.acl.found` must be `false` in the cluster configuration.
+  MSK does not support restricting public access by IP address. Allow the public ports (`9194`, `9196`, `9198`) only from the required sources with the security groups (e.g. `default_security_group.broker_ingress_ipv4_cidrs`).
+  EOF
   type        = bool
   default     = false
   nullable    = false
+
+  validation {
+    condition = (!var.broker_public_access_enabled
+      || (!var.authentication.unauthenticated_access.enabled
+        && anytrue([
+          var.authentication.sasl_iam.enabled,
+          var.authentication.sasl_scram.enabled,
+          var.authentication.tls.enabled,
+        ])
+      )
+    )
+    error_message = "Public access requires `authentication.unauthenticated_access` to be disabled and at least one of `authentication.sasl_iam`, `authentication.sasl_scram` and `authentication.tls` to be enabled."
+  }
+
+  validation {
+    condition = (!var.broker_public_access_enabled
+      || (var.encryption_in_transit.in_cluster_enabled
+        && var.encryption_in_transit.client_mode == "TLS"
+      )
+    )
+    error_message = "Public access requires `encryption_in_transit.in_cluster_enabled` to be `true` and `encryption_in_transit.client_mode` to be `TLS`."
+  }
 }
 
 variable "default_security_group" {
