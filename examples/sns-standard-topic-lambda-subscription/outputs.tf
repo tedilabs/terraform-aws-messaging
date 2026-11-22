@@ -4,6 +4,6 @@ output "topic" {
 }
 
 output "lambda_function" {
-  description = "The Lambda function for VPC Lattice."
+  description = "The Lambda function subscribed to the SNS topic."
   value       = module.lambda_function
 }

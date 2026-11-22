@@ -339,7 +339,7 @@ variable "broker_storage" {
       var.broker_storage.provisioned_throughput.enabled == false,
       var.broker_storage.provisioned_throughput.enabled == true && var.broker_storage.provisioned_throughput.throughput >= 250,
     ])
-    error_message = "Valid value for `throughput` is greater than `250`."
+    error_message = "Valid value for `throughput` is at least `250`."
   }
   validation {
     condition     = !var.broker_storage.autoscaling.enabled || var.broker_storage.autoscaling.max_volume_size != null

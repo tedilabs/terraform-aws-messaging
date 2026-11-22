@@ -35,6 +35,10 @@ Terraform Modules from [this package](https://github.com/tedilabs/terraform-aws-
 
 ## Examples
 
+### EventBridge
+
+- [eventbridge](./examples/eventbridge)
+
 ### MSK (Managed Streaming for Apache Kafka)
 
 - [msk-topic](./examples/msk-topic)
@@ -44,6 +48,7 @@ Terraform Modules from [this package](https://github.com/tedilabs/terraform-aws-
 
 - [sns-standard-topic-email-subscription](./examples/sns-standard-topic-email-subscription)
 - [sns-standard-topic-lambda-subscription](./examples/sns-standard-topic-lambda-subscription)
+- [sns-standard-topic-sqs-subscription](./examples/sns-standard-topic-sqs-subscription)
 
 
 ## Self Promotion

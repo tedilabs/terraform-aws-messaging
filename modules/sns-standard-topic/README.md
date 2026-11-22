@@ -76,7 +76,7 @@ This module creates following resources.
 | <a name="output_region"></a> [region](#output\_region) | The AWS region this module resources resides in. |
 | <a name="output_resource_group"></a> [resource\_group](#output\_resource\_group) | The resource group created to manage resources in this module. |
 | <a name="output_signature_version"></a> [signature\_version](#output\_signature\_version) | The signature version corresponds to the hashing algorithm used while creating the signature of the notifications, subscription confirmations, or unsubscribe confirmation messages sent by Amazon SNS. |
-| <a name="output_subscriptions"></a> [subscriptions](#output\_subscriptions) | The configurations for subscriptions to the SNS topic.<br/>    `EMAIL` - |
+| <a name="output_subscriptions"></a> [subscriptions](#output\_subscriptions) | The configurations for subscriptions to the SNS topic.<br/>    `EMAIL` - A map of email subscriptions, keyed by email address.<br/>    `EMAIL_JSON` - A map of email-json subscriptions, keyed by email address.<br/>    `LAMBDA` - A map of Lambda function subscriptions, keyed by subscription name.<br/>    `SQS` - A map of SQS queue subscriptions, keyed by subscription name. |
 | <a name="output_type"></a> [type](#output\_type) | The type of the SNS topic. |
 | <a name="output_xray_tracing_enabled"></a> [xray\_tracing\_enabled](#output\_xray\_tracing\_enabled) | Whether to activate AWS X-Ray Active Tracing mode for the SNS topic. |
 <!-- END_TF_DOCS -->
