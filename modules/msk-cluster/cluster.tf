@@ -147,7 +147,7 @@ resource "aws_msk_cluster" "this" {
   }
 
 
-  ## Authentiation
+  ## Authentication
   client_authentication {
     unauthenticated = var.authentication.unauthenticated_access.enabled
 

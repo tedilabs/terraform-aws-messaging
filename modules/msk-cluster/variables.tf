@@ -505,7 +505,7 @@ variable "logging" {
 
 variable "cloudwatch_metrics" {
   description = <<EOF
-  The configuration for CloudWatch Metrics of the MSK cluster. `cloudwatch_mterics` is defined below.
+  The configuration for CloudWatch Metrics of the MSK cluster. `cloudwatch_metrics` is defined below.
     (Optional) `monitoring_level` - The desired enhanced MSK CloudWatch monitoring level. `DEFAULT`, `PER_BROKER`, `PER_TOPIC_PER_BROKER`, `PER_TOPIC_PER_PARTITION` are available. Defaults to `DEFAULT`.
   EOF
   type = object({

@@ -151,7 +151,7 @@ variable "api_destination_targets" {
     (Required) `api_destination` - The Amazon Resource Name (ARN) of the target API destination.
 
     (Optional) `input` - The input to send to the target. `input` as defined below.
-      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRNASFORMER`. Defaults to `MATCHED_EVENT`.
+      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRANSFORMER`. Defaults to `MATCHED_EVENT`.
       (Optional) `value` - The input value to send to the target. Not required if `input.type` is `MATCHED_EVENT`.
         `CONSTANT` - Valid JSON text passed to the target.
         `JSON_PATH` - A JSON path expression that selects a portion of the event data to pass to the target.
@@ -228,7 +228,7 @@ variable "aws_service_targets" {
       (Required) `target_selector` - The target selector as a Map of key-value pairs. Valid keys are `InstanceIds` or `tag:$${tag-name}`.
 
     (Optional) `input` - The input to send to the target. `input` as defined below.
-      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRNASFORMER`, `CHATBOT_CUSTOM_NOTIFICATION`. Defaults to `MATCHED_EVENT`.
+      (Optional) `type` - Valid values are `MATCHED_EVENT`, `CONSTANT`, `JSON_PATH`, `TRANSFORMER`, `CHATBOT_CUSTOM_NOTIFICATION`. Defaults to `MATCHED_EVENT`.
       (Optional) `value` - The input value to send to the target. Not required if `input.type` is `MATCHED_EVENT`.
         `CONSTANT` - Valid JSON text passed to the target.
         `JSON_PATH` - A JSON path expression that selects a portion of the event data to pass to the target.

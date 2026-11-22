@@ -39,7 +39,7 @@ output "execution_role" {
 }
 
 output "trigger" {
-  description = "The configuration for the rule trriger."
+  description = "The configuration for the rule trigger."
   value = {
     event_pattern       = aws_cloudwatch_event_rule.this.event_pattern
     schedule_expression = aws_cloudwatch_event_rule.this.schedule_expression
