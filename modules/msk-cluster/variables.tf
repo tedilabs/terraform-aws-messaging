@@ -386,7 +386,7 @@ variable "intelligent_rebalancing" {
 
 variable "storage_mode" {
   description = <<EOF
-  (Optional) Controls storage mode for supported storage tiers. Valid values are are `LOCAL` or `TIERED`. Defaults to `LOCAL`.
+  (Optional) Controls storage mode for supported storage tiers. Valid values are `LOCAL` or `TIERED`. Defaults to `LOCAL`.
     `LOCAL` - Storage mode that uses local storage for all topics.
     `TIERED` - Storage mode that uses remote, longer-term tiered storage for certain topics at a lower cost. A remote tier automatically expands your storage capacity if necessary. Not supported on Express brokers (`express.*` broker instance types).
   EOF
