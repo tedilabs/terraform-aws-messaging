@@ -137,9 +137,12 @@ data "aws_iam_policy_document" "ssm_run_command" {
     ]) > 0 ? ["go"] : []
 
     content {
-      effect    = "Allow"
-      actions   = ["ssm:SendCommand"]
-      resources = ["arn:${local.partition}:ec2:${local.region}:${local.account_id}:instance/*"]
+      effect  = "Allow"
+      actions = ["ssm:SendCommand"]
+      resources = [
+        "arn:${local.partition}:ec2:${local.region}:${local.account_id}:instance/*",
+        "arn:${local.partition}:ssm:${local.region}:${local.account_id}:managed-instance/*",
+      ]
 
       dynamic "condition" {
         for_each = {
