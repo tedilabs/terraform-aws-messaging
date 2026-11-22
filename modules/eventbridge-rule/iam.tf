@@ -149,7 +149,7 @@ data "aws_iam_policy_document" "ssm_run_command" {
         }
 
         content {
-          variable = condition.key
+          variable = "ssm:resourceTag/${trimprefix(condition.key, "tag:")}"
           test     = "StringEquals"
           values   = condition.value
         }
