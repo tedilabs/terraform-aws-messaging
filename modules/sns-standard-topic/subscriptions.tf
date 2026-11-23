@@ -13,10 +13,10 @@ locals {
 ###################################################
 
 # INFO: Not supported attributes
-# - `confirmation_timeout_in_minutes`
 # - `delivery_policy`
 # - `endpoint_auto_confirms`
-# - `raw_message_delivery `
+# - `raw_message_delivery`
+# - `replay_policy`
 # - `subscription_role_arn`
 resource "aws_sns_topic_subscription" "email" {
   for_each = {
@@ -30,6 +30,8 @@ resource "aws_sns_topic_subscription" "email" {
 
   protocol = "email"
   endpoint = each.key
+
+  confirmation_timeout_in_minutes = each.value.confirmation_timeout_in_minutes
 
   filter_policy_scope = (each.value.filter_policy.enabled
     ? local.filter_policy_scopes[each.value.filter_policy.scope]
@@ -54,10 +56,10 @@ resource "aws_sns_topic_subscription" "email" {
 ###################################################
 
 # INFO: Not supported attributes
-# - `confirmation_timeout_in_minutes`
 # - `delivery_policy`
 # - `endpoint_auto_confirms`
-# - `raw_message_delivery `
+# - `raw_message_delivery`
+# - `replay_policy`
 # - `subscription_role_arn`
 resource "aws_sns_topic_subscription" "email_json" {
   for_each = {
@@ -71,6 +73,8 @@ resource "aws_sns_topic_subscription" "email_json" {
 
   protocol = "email-json"
   endpoint = each.key
+
+  confirmation_timeout_in_minutes = each.value.confirmation_timeout_in_minutes
 
   filter_policy_scope = (each.value.filter_policy.enabled
     ? local.filter_policy_scopes[each.value.filter_policy.scope]
@@ -98,7 +102,8 @@ resource "aws_sns_topic_subscription" "email_json" {
 # - `confirmation_timeout_in_minutes`
 # - `delivery_policy`
 # - `endpoint_auto_confirms`
-# - `raw_message_delivery `
+# - `raw_message_delivery`
+# - `replay_policy`
 # - `subscription_role_arn`
 resource "aws_sns_topic_subscription" "lambda" {
   for_each = {
@@ -139,6 +144,7 @@ resource "aws_sns_topic_subscription" "lambda" {
 # - `confirmation_timeout_in_minutes`
 # - `delivery_policy`
 # - `endpoint_auto_confirms`
+# - `replay_policy`
 # - `subscription_role_arn`
 resource "aws_sns_topic_subscription" "sqs" {
   for_each = {
