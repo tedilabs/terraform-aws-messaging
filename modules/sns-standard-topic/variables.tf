@@ -12,7 +12,7 @@ variable "name" {
 
   validation {
     condition     = !endswith(var.name, ".fifo")
-    error_message = "For a FIFO topic, the name must end with the `.fifo` suffix."
+    error_message = "The name of a standard topic must not end with the `.fifo` suffix. Use the `sns-fifo-topic` module for a FIFO topic."
   }
 }
 

@@ -164,7 +164,7 @@ variable "api_destination_targets" {
       (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
       (Optional) `sqs_queue` - The Amazon Resource Name (ARN) of the SQS queue specified as the target for the dead letter queue.
     (Optional) `retry_policy` - The configuration for retry policy of the rule target. Retry policies are used for specifying how many times to retry sending an event to a target after an error occurs. `retry_policy` as defined below.
-      (Optional) `maximum_event_age` - The maximum amount of time, in seconds, to continue to make retry attempts. Defaults to `86400` (1 hour).
+      (Optional) `maximum_event_age` - The maximum amount of time, in seconds, to continue to make retry attempts. Defaults to `86400` (24 hours).
       (Optional) `maximum_retry_attempts` - The maximum number of times to retry sending an event to a target after an error occurs. Defaults to `185`.
   EOF
   type = list(object({
@@ -242,7 +242,7 @@ variable "aws_service_targets" {
       (Optional) `enabled` - Whether to enable the dead letter queue. Defaults to `false`.
       (Optional) `sqs_queue` - The Amazon Resource Name (ARN) of the SQS queue specified as the target for the dead letter queue.
     (Optional) `retry_policy` - The configuration for retry policy of the rule target. Retry policies are used for specifying how many times to retry sending an event to a target after an error occurs. `retry_policy` as defined below.
-      (Optional) `maximum_event_age` - The maximum amount of time, in seconds, to continue to make retry attempts. Defaults to `86400` (1 hour).
+      (Optional) `maximum_event_age` - The maximum amount of time, in seconds, to continue to make retry attempts. Defaults to `86400` (24 hours).
       (Optional) `maximum_retry_attempts` - The maximum number of times to retry sending an event to a target after an error occurs. Defaults to `185`.
   EOF
   type = list(object({
