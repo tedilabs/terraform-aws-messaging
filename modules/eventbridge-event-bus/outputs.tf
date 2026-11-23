@@ -18,6 +18,34 @@ output "name" {
   value       = local.event_bus.name
 }
 
+output "description" {
+  description = "The description of the event bus."
+  value       = local.event_bus.description
+}
+
+output "encryption_at_rest" {
+  description = "The configuration to encrypt events at rest in the event bus."
+  value = {
+    kms_key = local.event_bus.kms_key_identifier
+  }
+}
+
+output "dead_letter_queue" {
+  description = "The configuration for the dead-letter queue of the event bus."
+  value = {
+    enabled   = try(local.event_bus.dead_letter_config[0].arn, null) != null
+    sqs_queue = try(local.event_bus.dead_letter_config[0].arn, null)
+  }
+}
+
+output "logging" {
+  description = "The configuration for logging of the event bus."
+  value = {
+    level                  = try(local.event_bus.log_config[0].level, "OFF")
+    include_detail_enabled = try(local.event_bus.log_config[0].include_detail, "NONE") == "FULL"
+  }
+}
+
 output "archives" {
   description = "A list of archives for the event bus."
   value = [
@@ -27,6 +55,8 @@ output "archives" {
       name              = archive.name
       description       = archive.description
       retention_in_days = archive.retention_days
+      event_pattern     = archive.event_pattern
+      kms_key           = archive.kms_key_identifier
     }
   ]
 }
