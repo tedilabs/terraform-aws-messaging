@@ -163,18 +163,13 @@ output "encryption_at_rest" {
   }
 }
 
-# output "z" {
-#   description = "The list of log streams for the log group."
+# output "debug" {
 #   value = {
-#     for k, v in aws_sns_topic.this :
-#     k => v
-#     if !contains(["id", "arn", "name", "name_prefix", "display_name", "owner", "tags", "tags_all", "signature_version", "kms_master_key_id", "tracing_config", "content_based_deduplication", "fifo_topic"], k)
-#   }
-# }
-
-# output "zz" {
-#   description = "The list of log streams for the log group."
-#   value = {
+#     topic = {
+#       for k, v in aws_sns_topic.this :
+#       k => v
+#       if !contains(["id", "arn", "name", "name_prefix", "display_name", "owner", "tags", "tags_all", "signature_version", "kms_master_key_id", "tracing_config", "content_based_deduplication", "fifo_topic"], k)
+#     }
 #     policy      = aws_sns_topic_policy.this
 #     data_policy = aws_sns_topic_data_protection_policy.this
 #     queue = {
