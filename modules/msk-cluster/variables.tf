@@ -384,7 +384,7 @@ variable "intelligent_rebalancing" {
   nullable = false
 }
 
-variable "cluster_storage_mode" {
+variable "storage_mode" {
   description = <<EOF
   (Optional) Controls storage mode for supported storage tiers. Valid values are are `LOCAL` or `TIERED`. Defaults to `LOCAL`.
     `LOCAL` - Storage mode that uses local storage for all topics.
@@ -395,12 +395,12 @@ variable "cluster_storage_mode" {
   nullable    = false
 
   validation {
-    condition     = contains(["LOCAL", "TIERED"], var.cluster_storage_mode)
-    error_message = "Valid values for `cluster_storage_mode` are `LOCAL` or `TIERED`."
+    condition     = contains(["LOCAL", "TIERED"], var.storage_mode)
+    error_message = "Valid values for `storage_mode` are `LOCAL` or `TIERED`."
   }
 
   validation {
-    condition     = var.cluster_storage_mode != "TIERED" || !startswith(var.broker_instance_type, "express.")
+    condition     = var.storage_mode != "TIERED" || !startswith(var.broker_instance_type, "express.")
     error_message = "`TIERED` storage mode is not supported on Express brokers (`express.*` broker instance types), which manage their storage."
   }
 }

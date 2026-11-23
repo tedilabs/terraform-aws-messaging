@@ -135,7 +135,7 @@ resource "aws_msk_cluster" "this" {
       }
     }
   }
-  storage_mode = var.cluster_storage_mode
+  storage_mode = var.storage_mode
 
   dynamic "configuration_info" {
     for_each = local.cluster_configuration != null ? [local.cluster_configuration] : []

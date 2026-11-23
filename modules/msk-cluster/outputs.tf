@@ -138,7 +138,7 @@ output "intelligent_rebalancing" {
   )
 }
 
-output "cluster_storage_mode" {
+output "storage_mode" {
   description = "The storage mode of the MSK cluster."
   value       = aws_msk_cluster.this.storage_mode
 }
