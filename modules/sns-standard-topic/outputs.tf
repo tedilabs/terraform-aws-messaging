@@ -36,7 +36,10 @@ output "type" {
 output "subscriptions" {
   description = <<EOF
   The configurations for subscriptions to the SNS topic.
-    `EMAIL` -
+    `EMAIL` - A map of email subscriptions, keyed by email address.
+    `EMAIL_JSON` - A map of email-json subscriptions, keyed by email address.
+    `LAMBDA` - A map of Lambda function subscriptions, keyed by subscription name.
+    `SQS` - A map of SQS queue subscriptions, keyed by subscription name.
   EOF
   value = {
     "EMAIL" = {

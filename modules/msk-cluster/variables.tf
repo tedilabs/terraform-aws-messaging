@@ -227,8 +227,8 @@ variable "default_security_group" {
       (Optional) `ipv4_cidrs` - The IPv4 network ranges to allow, in CIDR notation.
       (Optional) `ipv6_cidrs` - The IPv6 network ranges to allow, in CIDR notation.
       (Optional) `prefix_lists` - The prefix list IDs to allow.
-      (Optional) `security_groups` - The source security group IDs to allow.
-      (Optional) `self` - Whether the security group itself will be added as a source to this egress rule.
+      (Optional) `security_groups` - The destination security group IDs to allow.
+      (Optional) `self` - Whether the security group itself will be added as a destination to this egress rule.
     (Optional) `broker_ingress_ipv4_cidrs` - A list of IPv4 CIDR ranges to allow on the Kafka broker ports that the cluster uses. Defaults to `[]`.
     (Optional) `broker_ingress_ipv6_cidrs` - A list of IPv6 CIDR ranges to allow on the Kafka broker ports that the cluster uses. Defaults to `[]`.
     (Optional) `broker_ingress_prefix_lists` - A list of prefix list IDs to allow on the Kafka broker ports that the cluster uses. Defaults to `[]`.
@@ -339,7 +339,7 @@ variable "broker_storage" {
       var.broker_storage.provisioned_throughput.enabled == false,
       var.broker_storage.provisioned_throughput.enabled == true && var.broker_storage.provisioned_throughput.throughput >= 250,
     ])
-    error_message = "Valid value for `throughput` is greater than `250`."
+    error_message = "Valid value for `throughput` is at least `250`."
   }
   validation {
     condition     = !var.broker_storage.autoscaling.enabled || var.broker_storage.autoscaling.max_volume_size != null
