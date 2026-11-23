@@ -437,6 +437,21 @@ variable "authentication" {
   })
   default  = {}
   nullable = false
+
+  validation {
+    condition = anytrue([
+      length(var.authentication.sasl_scram.users) == 0,
+      var.authentication.sasl_scram.enabled,
+    ])
+    error_message = "`sasl_scram.enabled` should be `true` when `sasl_scram.users` is provided."
+  }
+  validation {
+    condition = anytrue([
+      length(var.authentication.sasl_scram.users) == 0,
+      var.authentication.sasl_scram.kms_key != null,
+    ])
+    error_message = "`sasl_scram.kms_key` should be provided when `sasl_scram.users` is provided. A secret created with the default AWS KMS key cannot be used with an Amazon MSK cluster."
+  }
 }
 
 variable "encryption_at_rest" {
@@ -543,12 +558,12 @@ variable "policy" {
 
 variable "timeouts" {
   description = "(Optional) How long to wait for the MSK cluster to be created/updated/deleted."
-  type        = map(string)
-  default = {
-    create = "120m"
-    update = "120m"
-    delete = "120m"
-  }
+  type = object({
+    create = optional(string, "120m")
+    update = optional(string, "120m")
+    delete = optional(string, "120m")
+  })
+  default  = {}
   nullable = false
 }
 
