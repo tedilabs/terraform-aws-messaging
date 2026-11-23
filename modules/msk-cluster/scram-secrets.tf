@@ -16,7 +16,7 @@ resource "random_password" "this" {
 # SASL/SCRAM User & Password for MSK Cluster
 ###################################################
 
-# TODO: Create an independant module for msk-scram-users
+# TODO: Create an independent module for msk-scram-users
 module "secret" {
   source  = "tedilabs/secret/aws//modules/secrets-manager-secret"
   version = "~> 0.8.0"
@@ -26,7 +26,7 @@ module "secret" {
   region = var.region
 
   name        = "AmazonMSK_SCRAM/${var.name}/${each.key}"
-  description = "The SASL/SCRAM secret to provide username and password for MSK cluster authenticaiton."
+  description = "The SASL/SCRAM secret to provide username and password for MSK cluster authentication."
 
   type = "KEY_VALUE"
   kv_value = {

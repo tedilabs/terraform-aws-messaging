@@ -30,7 +30,7 @@ Terraform Modules from [this package](https://github.com/tedilabs/terraform-aws-
   - FIFO Topic
   - Standard Topic
 - **AWS SQS (Simple Queue Service)**
-  - Comming Soon!
+  - Coming Soon!
 
 
 ## Examples
